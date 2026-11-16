@@ -822,9 +822,15 @@
   let deepLinkApplied = false;
 
   /** Bangun URL deep-link ke app ini untuk tiket tertentu. */
+  // Link yang dikirim lewat WhatsApp memakai alamat GitHub Pages ini (halaman
+  // pengalih/redirect ke Apps Script, parameter ?view=&ticket= ikut diteruskan).
+  // Kosongkan string ini kalau mau kembali memakai link Apps Script langsung.
+  const SHARE_BASE_URL = 'https://ptkawanlamasejahtera.github.io/KLGGO/';
+
   function buildAppLink(view, ticket){
-    if(!APP_BASE_URL) return '';
-    return APP_BASE_URL + '?view=' + encodeURIComponent(view) + '&ticket=' + encodeURIComponent(ticket);
+    const base = SHARE_BASE_URL || APP_BASE_URL;
+    if(!base) return '';
+    return base + '?view=' + encodeURIComponent(view) + '&ticket=' + encodeURIComponent(ticket);
   }
 
   /** Terapkan deep link (kalau ada) begitu data pertama kali berhasil dimuat
@@ -1023,6 +1029,7 @@
     localStorage.removeItem('klg_auth_role');
     localStorage.removeItem('klg_auth_driver');
     localStorage.removeItem('klg_selected_site');
+    clearCache();
     renderNav();
     switchLoginTab('staff');
     goTo('login');
@@ -1447,6 +1454,34 @@
   }
 
   /* ======================= LOAD DATA ======================= */
+  /* ---- Cache lokal (stale-while-revalidate): data terakhir disimpan di perangkat
+   *  & langsung ditampilkan saat app dibuka, sementara data terbaru diambil dari
+   *  server di latar belakang. Dihapus saat logout. ---- */
+  const CACHE_KEY = 'klg_data_cache_v1';
+  function saveCache(data){
+    try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), data: data })); }catch(e){}
+  }
+  function clearCache(){
+    try{ localStorage.removeItem(CACHE_KEY); }catch(e){}
+  }
+  function loadFromCache(){
+    try{
+      const raw = localStorage.getItem(CACHE_KEY);
+      if(!raw) return false;
+      const obj = JSON.parse(raw);
+      if(!obj || !obj.data) return false;
+      STATE = obj.data;
+      STATE.armada = normalizeArmadaList(STATE.armada);
+      STATE.driver = normalizeDriverList(STATE.driver);
+      STATE.pic = normalizePicList(STATE.pic);
+      if(STATE.sites && STATE.sites.length) populateSiteDropdown(STATE.sites);
+      renderAll();
+      const statusEl = document.getElementById('last-updated');
+      if(statusEl) statusEl.textContent = 'Memperbarui…';
+      return true;
+    }catch(e){ return false; }
+  }
+
   let isLoadingData = false;
   function loadData(manual, isRetry){
     if(!isLoggedIn) return; // jangan tarik data sebelum login
@@ -1456,7 +1491,8 @@
     const btn = document.getElementById('refresh-btn');
     const statusEl = document.getElementById('last-updated');
     if(manual && btn){ btn.disabled = true; btn.innerHTML = '⏳ Memuat…'; }
-    if(statusEl && !isRetry){ statusEl.textContent = 'Memuat data…'; }
+    const hasData = (STATE.requests && STATE.requests.length) || (STATE.armada && STATE.armada.length);
+    if(statusEl && !isRetry){ statusEl.textContent = hasData ? 'Memperbarui…' : 'Memuat data…'; }
 
     let settled = false;
     const timeoutId = setTimeout(()=>{
@@ -1470,6 +1506,7 @@
         if(settled) return;
         settled = true;
         clearTimeout(timeoutId);
+        saveCache(data);
         STATE = data;
         STATE.armada = normalizeArmadaList(STATE.armada);
         STATE.driver = normalizeDriverList(STATE.driver);
@@ -2645,7 +2682,7 @@
   populateDriverLoginOptions();
   renderNav();
   goTo(isLoggedIn ? (selectedSite ? 'dashboard' : 'siteselect') : 'login');
-  if(isLoggedIn) loadData();
+  if(isLoggedIn){ loadFromCache(); loadData(); }
   setInterval(loadData, 8000);
 
   // Browser mobile sering "membekukan" timer setInterval saat tab di-background.

@@ -1,0 +1,2663 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KLG Go</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<style>
+  :root{
+    --bg:#F7F7F6;
+    --card:#FFFFFF;
+    --card-2:#F5F5F4;
+    --line:#E7E7E5;
+    --text:#141414;
+    --text-dim:#5C5C5C;
+    --text-faint:#9A9A9A;
+    --primary:#E12630;
+    --primary-dim:rgba(225,38,48,0.10);
+    --orange:#F0A020;
+    --orange-dim:rgba(240,160,32,0.14);
+    --slate:#5C6470;
+    --slate-dim:rgba(92,100,112,0.10);
+    --blue:#3A7BD5;
+    --blue-dim:rgba(58,123,213,0.12);
+    --purple:#8B5CF6;
+    --purple-dim:rgba(139,92,246,0.12);
+    --green:#1E8E5A;
+    --green-dim:rgba(30,142,90,0.12);
+    --red:#E12630;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:430px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:78px;}
+  h1,h2,.font-display{font-family:'Sora',sans-serif;}
+
+  /* ---- header ---- */
+  .topbar{
+    display:flex;align-items:center;gap:12px;
+    padding:18px 18px 14px;
+  }
+  .logo{
+    width:38px;height:38px;border-radius:11px;
+    background:linear-gradient(150deg,var(--primary),#B71E27);
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;flex-shrink:0;
+  }
+  .topbar h1{font-size:15.5px;font-weight:700;margin:0;letter-spacing:.01em;}
+  .topbar p{font-size:11.5px;color:var(--text-dim);margin:2px 0 0;}
+
+  .view{display:none;padding:0 16px;}
+  .view.active{display:block;}
+
+  /* ---- stat cards ---- */
+  .stats-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;
+  }
+  .stat-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    box-shadow:0 1px 3px rgba(20,20,20,.05);
+    border-radius:var(--radius);
+    padding:14px 14px 13px;
+  }
+  .stat-icon{
+    width:30px;height:30px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;margin-bottom:10px;
+  }
+  .stat-icon.orange{background:var(--orange-dim);color:var(--orange);}
+  .stat-icon.blue{background:var(--blue-dim);color:var(--blue);}
+  .stat-icon.green{background:var(--green-dim);color:var(--green);}
+  .stat-icon.purple{background:var(--purple-dim);color:var(--purple);}
+  .stat-num{font-size:24px;font-weight:800;line-height:1;margin-bottom:5px;}
+  .stat-label{font-size:11.5px;color:var(--text-dim);font-weight:500;}
+
+  /* ---- section card ---- */
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    box-shadow:0 1px 3px rgba(20,20,20,.05);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .panel-title{
+    font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--text-dim);margin:0 0 13px;
+  }
+
+  /* distribution bar */
+  .dist-bar{height:9px;border-radius:6px;overflow:hidden;display:flex;background:var(--card-2);margin-bottom:12px;}
+  .dist-bar span{height:100%;}
+  .dist-legend{display:flex;flex-direction:column;gap:9px;}
+  .dist-row{display:flex;align-items:center;font-size:12.5px;}
+  .dist-dot{width:8px;height:8px;border-radius:50%;margin-right:9px;flex-shrink:0;}
+  .dist-row .lbl{flex:1;color:var(--text-dim);}
+  .dist-row .val{font-weight:700;color:var(--text);}
+
+  /* rekap km/biaya */
+  .rekap-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .rekap-item{background:var(--card-2);border:1px solid var(--line);border-radius:11px;padding:12px;}
+  .rekap-item .lbl{font-size:11px;color:var(--text-faint);margin-bottom:4px;}
+  .rekap-item .val{font-family:'Sora',sans-serif;font-size:16.5px;font-weight:700;}
+
+  /* armada list */
+  .armada-item{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:11px 0;border-bottom:1px solid var(--line);
+  }
+  .armada-item:last-child{border-bottom:none;padding-bottom:0;}
+  .armada-item:first-child{padding-top:0;}
+  .armada-plate{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;font-weight:600;
+    background:var(--card-2);
+    padding:5px 9px;border-radius:6px;
+    margin-right:10px;
+  }
+  .armada-info{flex:1;display:flex;align-items:center;min-width:0;}
+  .armada-jenis{font-size:13px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .badge{
+    font-size:10.5px;font-weight:700;letter-spacing:.03em;
+    padding:5px 10px;border-radius:20px;flex-shrink:0;
+  }
+  .badge.tersedia{background:var(--green-dim);color:var(--green);}
+  .badge.dipakai{background:var(--slate-dim);color:var(--slate);}
+
+  /* dispatch board */
+  .board-header{
+    display:flex;align-items:center;justify-content:space-between;
+    margin:4px 0 12px;
+  }
+  .board-header h2{font-size:14px;font-weight:700;margin:0;}
+  .btn-new{
+    background:var(--primary);color:#fff;border:none;border-radius:9px;
+    padding:9px 14px;font-size:12.5px;font-weight:700;
+    display:flex;align-items:center;gap:6px;cursor:pointer;
+    box-shadow:0 4px 10px rgba(225,38,48,.25);
+  }
+
+  .status-group{
+    border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:0 1px 3px rgba(20,20,20,.05);
+    margin-bottom:10px;overflow:hidden;background:var(--card);
+  }
+  .status-group-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:13px 15px;cursor:pointer;
+  }
+  .status-group-head .left{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;}
+  .status-group-head .dot{width:8px;height:8px;border-radius:50%;}
+  .status-group-head .count{
+    font-size:11px;color:var(--text-dim);font-weight:500;
+  }
+  .chev{color:var(--text-faint);font-size:11px;transition:transform .15s;}
+  .status-group.open .chev{transform:rotate(180deg);}
+  .status-group-body{display:none;padding:0 15px 15px;}
+  .status-group.open .status-group-body{display:block;}
+  .empty-body{font-size:12.5px;color:var(--text-faint);padding:2px 0 4px;}
+
+  .trip-card{
+    background:var(--card-2);border:1px solid var(--line);
+    border-radius:11px;padding:13px 14px;margin-top:2px;
+  }
+  .trip-card + .trip-card{margin-top:10px;}
+  .trip-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+  .trip-name{font-size:13.5px;font-weight:700;}
+  .trip-ticket{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);}
+  .trip-badge{
+    font-size:10px;font-weight:700;padding:4px 9px;border-radius:20px;
+  }
+  .trip-row{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:var(--text-dim);margin-bottom:5px;line-height:1.4;}
+  .trip-row:last-of-type{margin-bottom:0;}
+  .trip-actions{margin-top:11px;display:flex;gap:8px;flex-wrap:wrap;}
+  .trip-actions button, .trip-actions a{
+    flex:1;min-width:110px;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;
+    text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  }
+  .btn-assign{background:var(--blue);color:#fff;}
+  .btn-progress{background:var(--purple);color:#fff;}
+  .btn-done{background:var(--green);color:#fff;}
+  .btn-map{background:#1a73e8;color:#fff;}
+
+  .assign-box{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line);}
+  .assign-box select, .assign-box input{
+    width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);
+    border-radius:7px;padding:9px 10px;font-size:12.5px;margin-bottom:8px;font-family:'Inter',sans-serif;
+  }
+  .assign-box button{
+    width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;
+    padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;
+  }
+  .assign-box .hint{font-size:11px;color:var(--text-faint);margin:-3px 0 8px;}
+
+  /* ---- bottom nav ---- */
+  .bottomnav{
+    position:fixed;left:0;right:0;bottom:0;
+    max-width:430px;margin:0 auto;
+    background:#FFFFFF;border-top:1px solid var(--line);
+    box-shadow:0 -6px 18px rgba(20,20,20,.05);
+    display:flex;padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+    z-index:50;
+  }
+  .nav-btn{
+    flex:1;background:none;border:none;color:var(--text-faint);
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    font-size:8.8px;font-weight:600;padding:6px 1px;cursor:pointer;
+    line-height:1.15;text-align:center;
+  }
+  .nav-btn .ic{font-size:16px;}
+  .nav-btn.active{color:var(--primary);}
+
+  /* ---- request form ---- */
+  .form-card{background:var(--card);border:1px solid var(--line);box-shadow:0 1px 3px rgba(20,20,20,.05);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;}
+  .field{margin-bottom:10px;}
+  .field label{display:block;font-size:11.5px;font-weight:600;color:var(--text-dim);margin-bottom:5px;}
+  .field label .req{color:var(--red);}
+  .field input, .field textarea, .field select{
+    width:100%;background:var(--card-2);border:1.5px solid var(--line);color:var(--text);
+    border-radius:8px;padding:9px 11px;font-size:14px;font-family:'Inter',sans-serif;
+  }
+  .field select{appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238A93A3' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--primary);}
+  .field textarea{resize:vertical;min-height:46px;}
+  .field select.invalid,.field.invalid select{border-color:var(--red);}
+  .field select:disabled{opacity:.65;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .field-row .field{margin-bottom:10px;}
+  .field-note{font-size:11px;color:var(--text-faint);margin:-4px 0 10px;}
+  .field-with-gps{display:flex;gap:8px;align-items:flex-start;}
+  .field-with-gps .field{flex:1;margin-bottom:0;}
+  .btn-gps{
+    flex-shrink:0;margin-top:22px;background:var(--blue-dim);color:var(--blue);border:1.5px solid var(--blue-dim);
+    border-radius:8px;padding:0 11px;height:39px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;
+  }
+  .gps-hint{font-size:10.5px;color:var(--green);margin:5px 0 10px;display:flex;align-items:center;gap:4px;}
+  .gps-hint.empty{color:var(--text-faint);}
+
+  /* site filter chips */
+  .site-tag{
+    display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;
+    color:var(--purple);background:var(--purple-dim);padding:3px 8px;border-radius:6px;margin-right:6px;
+  }
+  .site-group-title{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-faint);margin:14px 0 6px;}
+  .site-group-title:first-child{margin-top:0;}
+
+  /* ---- login (halaman paling awal) ---- */
+  #view-login{padding-top:8px;}
+  .role-hint{font-size:11px;color:var(--text-faint);text-align:center;margin:14px 0 0;line-height:1.5;}
+  .login-tabs{display:flex;gap:8px;margin-bottom:14px;}
+  .login-tab{
+    flex:1;text-align:center;padding:10px;border-radius:9px;
+    border:1.5px solid var(--line);background:var(--card-2);font-size:12.5px;font-weight:700;
+    color:var(--text-dim);cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .login-tab.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+
+  /* ---- site select ---- */
+  #view-siteselect{padding-top:8px;}
+  .siteselect-intro{text-align:center;padding:14px 10px 22px;}
+  .siteselect-intro .ic{font-size:38px;margin-bottom:10px;}
+  .siteselect-intro h2{font-size:17px;margin:0 0 6px;}
+  .siteselect-intro p{font-size:12.5px;color:var(--text-dim);margin:0;}
+  .siteselect-list{display:flex;flex-direction:column;gap:10px;}
+  .siteselect-card{
+    display:flex;align-items:center;gap:13px;background:var(--card);border:1.5px solid var(--line);
+    border-radius:var(--radius);padding:15px 16px;cursor:pointer;text-align:left;width:100%;
+    font-family:'Inter',sans-serif;
+  }
+  .siteselect-card:active{border-color:var(--primary);}
+  .siteselect-card .bld{
+    width:44px;height:44px;border-radius:12px;background:var(--primary-dim);color:var(--primary);
+    display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;
+  }
+  .siteselect-card .txt{flex:1;min-width:0;}
+  .siteselect-card .txt .nm{font-size:14px;font-weight:700;}
+  .siteselect-card .txt .sub{font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+  .siteselect-card .arrow{color:var(--text-faint);font-size:16px;}
+  .change-site-link{
+    background:none;border:none;color:var(--text-dim);font-size:11px;font-weight:600;
+    cursor:pointer;display:flex;align-items:center;gap:4px;margin-left:auto;padding:6px 4px;
+  }
+  .role-badge{
+    display:inline-block;font-size:10px;font-weight:700;letter-spacing:.03em;
+    padding:3px 8px;border-radius:6px;margin-left:6px;vertical-align:middle;
+  }
+  .role-badge.admin{background:var(--primary-dim);color:var(--primary);}
+  .role-badge.user{background:var(--slate-dim);color:var(--slate);}
+
+  /* ---- dashboard: hero card, akses cepat, ketersediaan armada ---- */
+  .hero-card{
+    margin:4px 0 22px;padding:22px 20px;border-radius:var(--radius);
+    background:linear-gradient(135deg,#EE3A44 0%,#C81A24 100%);color:#fff;
+    position:relative;overflow:hidden;
+  }
+  .hero-card::after{
+    content:"🚐";position:absolute;right:-6px;bottom:-18px;font-size:96px;opacity:.16;transform:rotate(-8deg);
+  }
+  .hero-card .eyebrow{font-size:11.5px;font-weight:700;opacity:.85;letter-spacing:.01em;margin:0;}
+  .hero-card h2{font-size:19px;margin:6px 0 16px;line-height:1.3;max-width:230px;font-weight:700;}
+  .hero-cta{
+    display:inline-flex;align-items:center;gap:8px;background:#fff;color:#5A0E12;border:none;
+    font-weight:700;font-size:13px;padding:11px 16px;border-radius:12px;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+
+  .section-title{display:flex;align-items:baseline;justify-content:space-between;margin:2px 0 12px;}
+  .section-title h3{font-size:14.5px;margin:0;}
+  .section-title a{font-size:12px;color:var(--primary);font-weight:600;text-decoration:none;}
+
+  .quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;}
+  .quick-item{display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;}
+  .quick-item .ic{
+    width:50px;height:50px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;
+  }
+  .quick-item span{font-size:10.5px;font-weight:600;color:var(--text-dim);text-align:center;line-height:1.2;}
+
+  .site-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;margin-bottom:24px;-ms-overflow-style:none;scrollbar-width:none;}
+  .site-scroll::-webkit-scrollbar{display:none;}
+  .site-avail-card{
+    flex:0 0 auto;width:126px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;
+    box-shadow:0 1px 3px rgba(20,20,20,.05);
+  }
+  .site-avail-card .nm{font-size:12px;font-weight:700;margin-bottom:9px;}
+  .site-avail-card .ratio{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:var(--green);}
+  .site-avail-card .lbl{font-size:10px;color:var(--text-faint);margin-top:1px;}
+  .site-avail-card .bar{height:5px;border-radius:3px;background:var(--card-2);margin-top:10px;overflow:hidden;}
+  .site-avail-card .bar i{display:block;height:100%;background:var(--green);border-radius:3px;}
+
+  .recent-trip-item{
+    background:var(--card);border:1px solid var(--line);box-shadow:0 1px 3px rgba(20,20,20,.05);
+    border-radius:var(--radius);padding:13px 15px;margin-bottom:10px;
+  }
+  .recent-trip-item .row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px;}
+  .recent-trip-item .tkt{font-family:'Sora',sans-serif;font-size:12.5px;font-weight:700;}
+  .recent-trip-item .route{font-size:12px;color:var(--text-dim);}
+  .recent-trip-item .meta{font-size:11px;color:var(--text-faint);margin-top:5px;}
+  .toggle-group{display:flex;flex-wrap:wrap;gap:8px;}
+  .toggle-btn{
+    flex:1 1 auto;min-width:78px;text-align:center;padding:9px;border-radius:8px;
+    border:1.5px solid var(--line);background:var(--card-2);font-size:12.5px;font-weight:600;
+    color:var(--text-dim);cursor:pointer;
+  }
+  .toggle-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .stepper{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;}
+  .stepper button{width:38px;height:38px;border:none;background:var(--card-2);color:var(--text);font-size:17px;font-weight:700;cursor:pointer;}
+  .stepper input{flex:1;border:none;background:transparent;text-align:center;color:var(--text);font-size:14px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
+  #submit-btn{
+    width:100%;padding:14px;border:none;border-radius:10px;background:var(--primary);color:#fff;
+    box-shadow:0 8px 18px rgba(225,38,48,.3);
+    font-size:14.5px;font-weight:800;letter-spacing:.02em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;
+  }
+  #submit-btn:disabled{opacity:.6;}
+  .field.invalid input,.field.invalid textarea{border-color:var(--red);}
+  .spinner{width:15px;height:15px;border:2.5px solid rgba(255,255,255,0.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* riwayat table */
+  .riwayat-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:10px;}
+  .riwayat-top{display:flex;justify-content:space-between;margin-bottom:6px;}
+  .riwayat-top .nm{font-size:13.5px;font-weight:700;}
+  .riwayat-top .tk{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-faint);}
+  .riwayat-meta{font-size:12px;color:var(--text-dim);line-height:1.5;}
+
+  #toast{
+    position:fixed;left:50%;bottom:-80px;transform:translateX(-50%);
+    background:#1F1F1F;border:1px solid #2E2E2E;color:#fff;padding:12px 18px;border-radius:9px;
+    font-size:13.5px;font-weight:500;box-shadow:0 8px 30px rgba(0,0,0,0.25);transition:bottom .3s ease;z-index:999;max-width:88vw;
+  }
+  #toast.show{bottom:88px;}
+  #toast.success{border-color:var(--green);}
+  #toast.error{border-color:var(--red);}
+
+  .btn-wa{
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    background:#25D366;color:#0A2E17;border:none;border-radius:10px;
+    padding:13px;font-size:13.5px;font-weight:700;cursor:pointer;text-decoration:none;
+  }
+  .copy-btn{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--card-2);border:1px solid var(--line);color:var(--text);
+    border-radius:7px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .copy-btn:active{opacity:.7;}
+  .ticket-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 4px;}
+  .loading-row{text-align:center;color:var(--text-faint);font-size:12.5px;padding:20px 0;}
+
+  /* driver task card */
+  .task-card{background:var(--card);border:1px solid var(--line);box-shadow:0 1px 3px rgba(20,20,20,.05);border-radius:var(--radius);padding:15px;margin-bottom:12px;}
+  .task-card .trip-actions button{flex:1;}
+  .btn-start{background:var(--orange);color:#fff;}
+  .btn-finish{background:var(--green);color:#fff;}
+
+  /* ---- GPS map modal & mini-preview ---- */
+  #gps-modal-overlay{
+    position:fixed;inset:0;background:rgba(20,20,20,.55);z-index:1000;
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  #gps-modal-overlay.show{display:flex;}
+  #gps-modal{
+    background:var(--card);width:100%;max-width:430px;border-radius:18px 18px 0 0;
+    padding:16px;max-height:88vh;display:flex;flex-direction:column;gap:10px;
+  }
+  #gps-modal-map{width:100%;height:280px;border-radius:12px;background:var(--card-2);}
+  .gps-search-box{display:flex;gap:8px;}
+  .gps-search-box input{
+    flex:1;background:var(--card-2);border:1.5px solid var(--line);color:var(--text);
+    border-radius:8px;padding:9px 11px;font-size:13.5px;font-family:'Inter',sans-serif;
+  }
+  .gps-search-box input:focus{outline:none;border-color:var(--primary);}
+  .gps-search-box button{
+    flex-shrink:0;background:var(--primary);color:#fff;border:none;border-radius:8px;
+    padding:0 15px;font-size:14px;font-weight:700;cursor:pointer;
+  }
+  .gps-search-results{display:flex;flex-direction:column;gap:6px;max-height:150px;overflow-y:auto;}
+  .gps-search-result{
+    text-align:left;background:var(--card-2);border:1px solid var(--line);border-radius:8px;
+    padding:9px 11px;font-size:12.5px;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;
+    line-height:1.4;
+  }
+  .gps-search-result:active{border-color:var(--primary);}
+  .gps-modal-title{font-size:14.5px;font-weight:700;margin:0;}
+  .gps-modal-actions{display:flex;gap:8px;}
+  .gps-modal-actions button{flex:1;border:none;border-radius:9px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;}
+  .btn-locate{background:var(--blue-dim);color:var(--blue);}
+  .btn-save-loc{background:var(--primary);color:#fff;}
+  .btn-cancel-loc{background:var(--card-2);border:1px solid var(--line) !important;color:var(--text);}
+  .gps-modal-note{font-size:11px;color:var(--text-faint);margin:0;text-align:center;}
+
+  .mini-map{width:100%;height:180px;border-radius:11px;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="logo">🚐</div>
+    <div>
+      <h1 id="app-title">KLG Go</h1>
+      <p id="app-subtitle">Operasional Armada</p>
+    </div>
+    <button class="change-site-link" id="change-site-btn" onclick="goTo('siteselect')" style="display:none;">🏢 Ganti Site</button>
+  </div>
+
+  <!-- ================= LOGIN (HALAMAN PALING AWAL) ================= -->
+  <div class="view active" id="view-login">
+    <div class="siteselect-intro">
+      <div class="ic">🔐</div>
+      <h2>Masuk ke KLG Go</h2>
+      <p>Pilih menu login sesuai peran kamu.</p>
+    </div>
+
+    <div class="login-tabs" id="login-tabs">
+      <button type="button" class="login-tab active" data-tab="staff" onclick="switchLoginTab('staff')">👤 Requester / PIC / Admin</button>
+      <button type="button" class="login-tab" data-tab="driver" onclick="switchLoginTab('driver')">🚚 Driver (PIN)</button>
+    </div>
+
+    <!-- ---- Login Staff (Requester / PIC / Admin): username + password ---- -->
+    <div class="panel" id="login-staff-form">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="login-username" placeholder="Username" autocomplete="username">
+      </div>
+      <div class="field" style="margin-bottom:8px;">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+      </div>
+      <p id="login-error" style="color:var(--red);font-size:12px;margin:0 0 12px;display:none;">Username atau password salah. Coba lagi.</p>
+      <button onclick="doLogin()" style="width:100%;padding:13px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Masuk</button>
+      <p class="role-hint">Requester: request &amp; cek status kendaraan.<br>PIC/Admin: jadwalkan armada &amp; driver.</p>
+    </div>
+
+    <!-- ---- Login Driver: pilih nama + PIN bersama ---- -->
+    <div class="panel" id="login-driver-form" style="display:none;">
+      <div class="field">
+        <label>Nama Driver</label>
+        <select id="driver-login-name">
+          <option value="">Pilih nama kamu…</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:8px;">
+        <label>PIN Driver</label>
+        <input type="password" id="driver-login-pin" placeholder="Masukkan PIN" inputmode="numeric" maxlength="12">
+      </div>
+      <p id="driver-login-error" style="color:var(--red);font-size:12px;margin:0 0 12px;display:none;">Nama atau PIN salah. Coba lagi.</p>
+      <button onclick="doDriverLogin()" style="width:100%;padding:13px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Masuk sebagai Driver</button>
+      <p class="role-hint">Driver: lihat tugas yang di-assign, mulai/selesaikan tugas (KM &amp; biaya).<br>Tidak punya PIN? Hubungi PIC/Admin site kamu.</p>
+    </div>
+  </div>
+
+  <!-- ================= SITE SELECT ================= -->
+  <div class="view" id="view-siteselect">
+    <div class="siteselect-intro">
+      <div class="ic">🏢</div>
+      <h2>Pilih Site Kerja Kamu</h2>
+      <p>Pilih lokasi NDC tempat kamu bertugas. Data yang tampil akan otomatis difilter sesuai site ini.</p>
+    </div>
+    <div class="siteselect-list" id="siteselect-list"></div>
+  </div>
+
+  <!-- ================= DASHBOARD ================= -->
+  <div class="view" id="view-dashboard">
+
+    <!-- ---- Dashboard: REQUESTER ---- -->
+    <div id="dash-requester" style="display:none;">
+      <div class="hero-card">
+        <p class="eyebrow">REQUEST KENDARAAN</p>
+        <h2 class="font-display">Ajukan armada operasional untuk keperluan kerja hari ini</h2>
+        <button type="button" class="hero-cta" onclick="goTo('request')">Request Sekarang <span>→</span></button>
+      </div>
+      <div class="section-title"><h3>Akses cepat</h3></div>
+      <div class="quick-grid" style="grid-template-columns:1fr 1fr;">
+        <button type="button" class="quick-item" onclick="goTo('request')"><span class="ic" style="background:var(--primary-dim);">➕</span><span>Request Baru</span></button>
+        <button type="button" class="quick-item" onclick="goTo('status')"><span class="ic" style="background:var(--orange-dim);">🔍</span><span>Cek Status</span></button>
+      </div>
+      <div class="section-title"><h3>Request terbaru</h3></div>
+      <div id="recent-requests-requester"><div class="loading-row">Memuat…</div></div>
+    </div>
+
+    <!-- ---- Dashboard: PIC / ADMIN ---- -->
+    <div id="dash-pic" style="display:none;">
+      <div class="section-title"><h3>Akses cepat</h3></div>
+      <div class="quick-grid" id="quick-grid"></div>
+
+      <div class="section-title"><h3>Ketersediaan armada</h3><a href="javascript:void(0)" onclick="goTo('fleet')">Lihat semua</a></div>
+      <div class="site-scroll" id="site-availability"><div class="loading-row">Memuat…</div></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px;">
+        <span id="last-updated" style="font-size:11px;color:var(--text-faint);">Memuat data…</span>
+        <button onclick="loadData(true)" style="background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;" id="refresh-btn">🔄 Refresh</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon orange">📋</div>
+          <div class="stat-num" id="stat-hari-ini">0</div>
+          <div class="stat-label">Trip Hari Ini</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue">⏱</div>
+          <div class="stat-num" id="stat-menunggu">0</div>
+          <div class="stat-label">Menunggu Assign</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple">➤</div>
+          <div class="stat-num" id="stat-berjalan">0</div>
+          <div class="stat-label">Sedang Berjalan</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">🚚</div>
+          <div class="stat-num" id="stat-armada">0/0</div>
+          <div class="stat-label">Armada Tersedia</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Sebaran Status Trip</p>
+        <div class="dist-bar" id="dist-bar"></div>
+        <div class="dist-legend" id="dist-legend"></div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Rekap KM &amp; Biaya Bulan Ini</p>
+        <div class="rekap-grid">
+          <div class="rekap-item">
+            <div class="lbl">Total KM (trip selesai)</div>
+            <div class="val" id="rekap-km">0 km</div>
+          </div>
+          <div class="rekap-item">
+            <div class="lbl">Total Biaya (trip selesai)</div>
+            <div class="val" id="rekap-biaya">Rp 0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Status Armada</p>
+        <div id="armada-list"><div class="loading-row">Memuat…</div></div>
+      </div>
+
+      <div class="board-header">
+        <h2>Papan Dispatch</h2>
+        <button class="btn-new" onclick="goTo('request')">＋ Request Baru</button>
+      </div>
+      <div id="dispatch-board"><div class="loading-row">Memuat…</div></div>
+    </div>
+
+    <!-- ---- Dashboard: DRIVER ---- -->
+    <div id="dash-driver" style="display:none;">
+      <div class="section-title"><h3>Tugas Saya</h3></div>
+      <div id="driver-tasks"><div class="loading-row">Memuat…</div></div>
+
+      <div class="section-title" style="margin-top:22px;"><h3>Riwayat Trip Saya</h3><a href="javascript:void(0)" onclick="goTo('riwayat')">Lihat semua</a></div>
+      <div id="driver-recent-history"><div class="loading-row">Memuat…</div></div>
+    </div>
+
+  </div>
+
+  <!-- ================= REQUEST FORM ================= -->
+  <div class="view" id="view-request">
+    <div class="form-card">
+      <div class="field">
+        <label>Site / Lokasi <span class="req">*</span></label>
+        <select id="f-site">
+          <option value="">Pilih site…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Nama Requester <span class="req">*</span></label>
+        <input type="text" id="f-nama" placeholder="Nama lengkap">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>NIK Requester <span class="req">*</span></label>
+          <input type="text" id="f-nik" placeholder="NIK" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Departemen <span class="req">*</span></label>
+          <input type="text" id="f-departemen" placeholder="Cth: Operasional">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Cost Center <span class="req">*</span></label>
+          <input type="text" id="f-cost-center" placeholder="H0142020" style="text-transform:uppercase;">
+        </div>
+        <div class="field">
+          <label>No. HP / Kontak <span class="req">*</span></label>
+          <input type="tel" id="f-kontak" placeholder="08xx-xxxx">
+        </div>
+      </div>
+      <div class="field">
+        <label>Tanggal Penggunaan <span class="req">*</span></label>
+        <input type="date" id="f-tanggal">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Jam Penjemputan <span class="req">*</span></label>
+          <input type="time" id="f-jam">
+        </div>
+        <div class="field">
+          <label>Jam Pulang <span class="req">*</span></label>
+          <input type="time" id="f-jam-pulang">
+        </div>
+      </div>
+      <div class="field">
+        <label>Tipe Perjalanan <span class="req">*</span></label>
+        <div class="toggle-group" id="f-tipe-group">
+          <div class="toggle-btn" data-value="Sekali Jalan">Sekali Jalan</div>
+          <div class="toggle-btn" data-value="Pulang-Pergi">Pulang–Pergi</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Perlu Driver? <span class="req">*</span></label>
+        <div class="toggle-group" id="f-driver-group">
+          <div class="toggle-btn" data-value="Ya">Ya, dengan Driver</div>
+          <div class="toggle-btn" data-value="Tidak">Tidak, Unit Saja (Self-Drive)</div>
+        </div>
+        <p class="field-note" id="self-drive-note" style="display:none;">Kamu akan mengemudikan sendiri unit ini. Setelah PIC assign armada, update Mulai/Selesai perjalanan lewat menu <b>Cek Status</b> pakai nomor tiket.</p>
+      </div>
+
+      <div class="field" id="sim-field" style="display:none;">
+        <label>Foto SIM (ambil langsung dengan kamera) <span class="req">*</span></label>
+        <input type="file" accept="image/*" capture="environment" id="f-foto-sim">
+        <p class="field-note" id="sim-note">Wajib untuk self-drive. Tap kolom di atas untuk membuka kamera, lalu foto SIM asli yang masih berlaku (jelas &amp; terbaca). Hanya dipakai PIC untuk verifikasi.</p>
+        <p id="sim-status" style="display:none;font-size:11.5px;margin:6px 0 0;"></p>
+        <img id="sim-preview" alt="Preview SIM" style="display:none;width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid var(--line);margin-top:6px;background:var(--card-2);">
+      </div>
+
+      <div class="field-with-gps">
+        <div class="field">
+          <label>Titik Jemput <span class="req">*</span></label>
+          <input type="text" id="f-lokasi" placeholder="Lokasi awal">
+        </div>
+        <button type="button" class="btn-gps" onclick="openGpsModal('awal')">📍 Peta</button>
+      </div>
+      <div class="gps-hint empty" id="gps-hint-awal">Belum ada titik GPS untuk lokasi jemput (opsional).</div>
+
+      <div class="field-with-gps">
+        <div class="field">
+          <label>Tujuan <span class="req">*</span></label>
+          <input type="text" id="f-tujuan" placeholder="Lokasi tujuan">
+        </div>
+        <button type="button" class="btn-gps" onclick="openGpsModal('tujuan')">📍 Peta</button>
+      </div>
+      <div class="gps-hint empty" id="gps-hint-tujuan">Belum ada titik GPS untuk lokasi tujuan (opsional).</div>
+
+      <div class="field">
+        <label>Keperluan <span class="req">*</span></label>
+        <textarea id="f-keperluan" placeholder="Agenda perjalanan"></textarea>
+      </div>
+      <div class="field">
+        <label>Jumlah Penumpang <span class="req">*</span></label>
+        <div class="stepper">
+          <button type="button" onclick="stepQty(-1)">−</button>
+          <input type="text" id="f-jumlah" value="1" readonly>
+          <button type="button" onclick="stepQty(1)">+</button>
+        </div>
+        <p class="field-note">Kendaraan: Mobil Operasional (otomatis)</p>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Catatan Tambahan</label>
+        <textarea id="f-catatan" placeholder="Opsional"></textarea>
+      </div>
+    </div>
+    <button id="submit-btn" onclick="submitRequest()">Kirim Request</button>
+    <div style="height:20px;"></div>
+  </div>
+
+  <!-- ================= SUCCESS PANEL ================= -->
+  <div class="view" id="view-success">
+    <div class="panel" style="text-align:center;padding:26px 18px;">
+      <div style="font-size:34px;margin-bottom:8px;">✅</div>
+      <h2 style="font-size:16px;margin:0 0 4px;">Request Terkirim</h2>
+      <p style="font-size:12.5px;color:var(--text-dim);margin:0 0 4px;">Tiket</p>
+      <div class="ticket-row">
+        <b id="success-ticket" style="color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:15px;"></b>
+        <button class="copy-btn" id="success-ticket-copy">📋 Salin No. Tiket</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-faint);margin:0;">Email notifikasi sudah otomatis terkirim ke PIC.<br>Tap tombol di bawah untuk kirim juga via WhatsApp.<br>Simpan No. Tiket ini — cek status penjadwalan armada &amp; driver kapan saja lewat menu "Cek Status".</p>
+    </div>
+    <div class="panel" id="success-wa-buttons" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <button id="success-done-btn" onclick="finishSuccess()" style="width:100%;padding:14px;border:none;border-radius:10px;background:var(--card-2);border:1px solid var(--line);color:var(--text);font-size:14px;font-weight:700;cursor:pointer;">Selesai, Kembali ke Dashboard</button>
+    <div style="height:20px;"></div>
+  </div>
+
+  <!-- ================= CEK STATUS ================= -->
+  <div class="view" id="view-status">
+    <div class="panel">
+      <p class="panel-title">Cek Status Request</p>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Masukkan No. Tiket</label>
+        <input type="text" id="status-ticket-input" placeholder="Cth: TRX-123456" style="text-transform:uppercase;">
+      </div>
+      <button onclick="cekStatus()" style="width:100%;padding:12px;border:none;border-radius:9px;background:var(--primary);color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;">Cari Request</button>
+    </div>
+    <div id="status-result"></div>
+  </div>
+
+  <!-- ================= RIWAYAT ================= -->
+  <div class="view" id="view-riwayat">
+    <div class="panel" style="padding-top:14px;padding-bottom:2px;margin-bottom:14px;">
+      <p class="panel-title" style="margin-bottom:0;">Riwayat Trip</p>
+    </div>
+    <div id="riwayat-list"><div class="loading-row">Memuat…</div></div>
+  </div>
+
+  <!-- ================= PAPAN FLEET ================= -->
+  <div class="view" id="view-fleet">
+    <div class="panel">
+      <p class="panel-title">Tersedia</p>
+      <div id="fleet-tersedia"><div class="loading-row">Memuat…</div></div>
+    </div>
+    <div class="panel">
+      <p class="panel-title">Sedang Dipakai</p>
+      <div id="fleet-dipakai"><div class="loading-row">Memuat…</div></div>
+    </div>
+  </div>
+
+  <!-- ================= ARMADA & DRIVER ================= -->
+  <div class="view" id="view-armada">
+    <div class="panel">
+      <p class="panel-title">Armada, Driver &amp; PIC per Site</p>
+      <div id="armada-detail-list"><div class="loading-row">Memuat…</div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottomnav" id="bottomnav"></div>
+
+<!-- ================= GPS MODAL (peta pilih lokasi) ================= -->
+<div id="gps-modal-overlay">
+  <div id="gps-modal">
+    <p class="gps-modal-title" id="gps-modal-title">Pilih Lokasi</p>
+    <div class="gps-search-box">
+      <input type="text" id="gps-search-input" placeholder="Cari nama tempat/alamat…" onkeydown="if(event.key==='Enter'){event.preventDefault();searchGpsLocation();}">
+      <button type="button" onclick="searchGpsLocation()">🔍</button>
+    </div>
+    <div class="gps-search-results" id="gps-search-results"></div>
+    <div id="gps-modal-map"></div>
+    <p class="gps-modal-note">Cari nama lokasi di atas, tap peta untuk menaruh pin, atau pakai lokasi GPS kamu saat ini.</p>
+    <div class="gps-modal-actions">
+      <button type="button" class="btn-locate" onclick="useMyGpsLocation()">📍 Lokasi Saya</button>
+      <button type="button" class="btn-save-loc" onclick="saveGpsLocation()">Gunakan Titik Ini</button>
+    </div>
+    <button type="button" class="btn-cancel-loc" style="border:1.5px solid var(--line);background:var(--card-2);border-radius:9px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;" onclick="closeGpsModal()">Batal</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  /* ======================= CONFIG ======================= */
+  // Daftar site default (dipakai untuk isi dropdown sebelum data dari
+  // server datang). Kalau backend mengirim STATE.sites, dropdown akan
+  // disamakan otomatis dengan daftar dari sheet.
+  const SITE_LIST = ['NDC-Cikarang', 'NDC-Cikupa', 'NDC-Sidoarjo'];
+
+  /* ======================= DEEP LINK (dari notifikasi WA) =======================
+   * Server (doGet di Code.gs) sudah memvalidasi/whitelist parameter URL
+   * (?view=status|assign|start&ticket=...) dan menyuntikkannya ke sini lewat
+   * scriptlet template Apps Script. Dipakai supaya link di pesan WhatsApp
+   * bisa langsung membuka layar yang relevan setelah user login. */
+  const APP_BASE_URL = "<?= appBaseUrl ?>";
+  const INITIAL_VIEW = "<?= initialView ?>";
+  const INITIAL_TICKET = "<?= initialTicket ?>";
+  let deepLinkApplied = false;
+
+  /** Bangun URL deep-link ke app ini untuk tiket tertentu. */
+  function buildAppLink(view, ticket){
+    if(!APP_BASE_URL) return '';
+    return APP_BASE_URL + '?view=' + encodeURIComponent(view) + '&ticket=' + encodeURIComponent(ticket);
+  }
+
+  /** Terapkan deep link (kalau ada) begitu data pertama kali berhasil dimuat
+   *  setelah login — arahkan ke layar yang sesuai untuk role yang login. */
+  function applyDeepLink(){
+    if(deepLinkApplied) return;
+    if(!INITIAL_TICKET || !INITIAL_VIEW){ deepLinkApplied = true; return; }
+    deepLinkApplied = true;
+
+    if(INITIAL_VIEW === 'status'){
+      goTo('status');
+      const inp = document.getElementById('status-ticket-input');
+      if(inp){ inp.value = INITIAL_TICKET; cekStatus(); }
+    } else if(INITIAL_VIEW === 'assign' && isPic()){
+      const req = (STATE.requests||[]).find(r=>r['Ticket ID']===INITIAL_TICKET);
+      if(req && req['Site'] && selectedSite !== 'ALL' && selectedSite !== req['Site']){
+        selectedSite = req['Site'];
+        localStorage.setItem('klg_selected_site', selectedSite);
+        const subtitle = document.getElementById('app-subtitle');
+        if(subtitle) subtitle.textContent = 'Operasional Armada · ' + selectedSite;
+      }
+      goTo('dashboard');
+      assignOpenTicket = INITIAL_TICKET;
+      openGroups['Menunggu'] = true;
+      renderAll();
+      setTimeout(()=>{
+        const el = document.querySelector('.status-group[data-status="Menunggu"]');
+        if(el) el.scrollIntoView({behavior:'smooth'});
+      }, 300);
+    } else if(INITIAL_VIEW === 'start' && isDriver()){
+      const req = (STATE.requests||[]).find(r=>r['Ticket ID']===INITIAL_TICKET);
+      if(req && sameName(req['Driver'], authDriverName)){
+        goTo('dashboard');
+        driverActionOpenTicket = INITIAL_TICKET;
+        renderDriverTasks();
+      } else {
+        showToast('Tugas ini tidak ditemukan di daftar tugasmu', 'error');
+      }
+    }
+    // Kalau role yang login tidak cocok dengan view yang diminta (mis. link
+    // "assign" dibuka requester), tidak melakukan apa-apa — user tetap lanjut
+    // ke dashboard normal sesuai role-nya.
+  }
+
+  /* ======================= AUTH (LOGIN) =======================
+   * Login sederhana di sisi frontend, dengan 4 role:
+   *   - requester : hanya bisa submit request & cek status/tracking.
+   *   - pic       : kelola dispatch (assign armada+driver) untuk site
+   *                 yang dipilih, pantau ketersediaan armada/driver.
+   *   - admin     : sama seperti pic, tapi bisa pilih "Semua Site"
+   *                 untuk melihat & mengelola seluruh site sekaligus.
+   *   - driver    : LOGIN PAKAI PIN (bukan username/password per-orang).
+   *                 Driver tinggal pilih namanya dari daftar (menu
+   *                 dropdown "Nama Driver" di tab "Driver (PIN)" pada
+   *                 halaman login), lalu masukkan PIN bersama. Setelah
+   *                 masuk, driver hanya melihat tugas yang di-assign ke
+   *                 namanya, bisa "Mulai Tugas" (isi KM Awal) & "Selesai
+   *                 Tugas" (isi KM Akhir + Total Biaya).
+   *
+   * CATATAN: ini gerbang akses sederhana (cocok untuk internal team),
+   * BUKAN pengamanan tingkat server — silakan ganti username/password/
+   * PIN di bawah ini sesuai kebutuhan, dan tambahkan 1 baris driver baru
+   * di DRIVER_ACCOUNTS setiap kali ada driver baru di sheet Driver
+   * (nama di sini WAJIB sama persis dengan "Nama Driver" di sheet).
+   *
+   * PENTING (diperbaiki): DRIVER_ACCOUNTS di bawah ini HARUS selalu
+   * sinkron 1:1 dengan isi sheet "Driver" (kolom "Nama Driver"). Kalau
+   * ada nama yang muncul di salah satu tapi tidak di yang lain, driver
+   * itu tidak akan bisa login ATAU tidak akan bisa menerima tugas yang
+   * di-assign PIC. Cek berkala kedua daftar ini.
+   *
+   * PENTING (diperbaiki lagi): 'JOKO' dan 'KHAERUL' DIHAPUS dari daftar
+   * ini — keduanya adalah PIC (lihat sheet PIC: JOKO untuk NDC-Cikupa,
+   * KHERUL untuk NDC-Sidoarjo), bukan driver, jadi tidak boleh muncul
+   * di halaman login "Driver (PIN)". Saat ini NDC-Cikupa hanya punya
+   * 1 driver terdaftar (EDI S) dan NDC-Sidoarjo belum punya driver sama
+   * sekali — tambahkan baris baru di sini begitu ada nama driver asli.
+   */
+  const AUTH_ACCOUNTS = [
+    { username: 'KLG',   password: 'KLG123',   role: 'requester' },
+    { username: 'pic',   password: 'pic123',   role: 'pic' },
+    { username: 'admin', password: 'admin123', role: 'admin' }
+  ];
+
+  // PIN bersama untuk semua driver (semua driver pakai PIN yang sama ini,
+  // yang membedakan mereka cukup dari nama yang dipilih di dropdown).
+  // Ganti ke PIN lain sesuai kebutuhan.
+  const DRIVER_PIN = '12345';
+
+  // Daftar driver yang boleh login lewat tab "Driver (PIN)". "driverName"
+  // WAJIB sama persis (case-insensitive) dengan kolom "Nama Driver" di
+  // sheet Driver, supaya tugas yang di-assign bisa cocok otomatis.
+  // (Diperbaiki: daftar ini sekarang PERSIS sama dengan seed sheet Driver
+  // di Code.gs — tidak ada lagi driver "MENYUSUL" yang tidak jelas.)
+  const DRIVER_ACCOUNTS = [
+    { driverName: 'JOHAR',    site: 'NDC-Cikarang' },
+    { driverName: 'SUPRIONO', site: 'NDC-Cikarang' },
+    { driverName: 'EDI S',    site: 'NDC-Cikupa' }
+  ];
+
+  let authRole = localStorage.getItem('klg_auth_role') || '';
+  let authDriverName = localStorage.getItem('klg_auth_driver') || '';
+  let isLoggedIn = !!authRole;
+
+  function isAdmin(){ return authRole === 'admin'; }
+  function isPic(){ return authRole === 'pic' || authRole === 'admin'; }
+  function isDriver(){ return authRole === 'driver'; }
+  function isRequester(){ return authRole === 'requester'; }
+  function sameName(a,b){ return String(a||'').trim().toLowerCase() === String(b||'').trim().toLowerCase(); }
+  /** true kalau request ini "unit saja" (self-drive, tanpa driver) */
+  function isSelfDriveReq(r){ return (r['Butuh Driver'] || 'Ya') === 'Tidak'; }
+
+  /** Ganti tab login antara "Staff" (username/password) dan "Driver" (PIN). */
+  function switchLoginTab(tab){
+    document.querySelectorAll('.login-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+    document.getElementById('login-staff-form').style.display = tab==='staff' ? 'block' : 'none';
+    document.getElementById('login-driver-form').style.display = tab==='driver' ? 'block' : 'none';
+    document.getElementById('login-error').style.display = 'none';
+    document.getElementById('driver-login-error').style.display = 'none';
+  }
+
+  /** Isi dropdown "Nama Driver" di halaman login dari DRIVER_ACCOUNTS. */
+  function populateDriverLoginOptions(){
+    const sel = document.getElementById('driver-login-name');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">Pilih nama kamu…</option>' +
+      DRIVER_ACCOUNTS.map(d=>'<option value="'+esc(d.driverName)+'">'+esc(d.driverName)+' · '+esc(d.site)+'</option>').join('');
+  }
+
+  function doLogin(){
+    const uEl = document.getElementById('login-username');
+    const pEl = document.getElementById('login-password');
+    const u = uEl.value.trim();
+    const p = pEl.value;
+    const found = AUTH_ACCOUNTS.find(a => a.username.toLowerCase() === u.toLowerCase() && a.password === p);
+    const errEl = document.getElementById('login-error');
+    if(!found){
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+    authRole = found.role;
+    authDriverName = '';
+    isLoggedIn = true;
+    localStorage.setItem('klg_auth_role', authRole);
+    localStorage.removeItem('klg_auth_driver');
+
+    uEl.value = '';
+    pEl.value = '';
+    renderNav();
+    showToast('✓ Login berhasil sebagai ' + roleLabel(authRole), 'success');
+    goTo(selectedSite ? 'dashboard' : 'siteselect');
+    loadData();
+  }
+
+  /** Login khusus Driver: pilih nama dari dropdown + PIN bersama (DRIVER_PIN). */
+  function doDriverLogin(){
+    const nameSel = document.getElementById('driver-login-name');
+    const pinEl = document.getElementById('driver-login-pin');
+    const name = nameSel.value;
+    const pin = pinEl.value.trim();
+    const errEl = document.getElementById('driver-login-error');
+    const found = DRIVER_ACCOUNTS.find(d => d.driverName === name);
+
+    if(!name || !found || pin !== DRIVER_PIN){
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+
+    authRole = 'driver';
+    authDriverName = found.driverName;
+    isLoggedIn = true;
+    selectedSite = found.site || '';
+    localStorage.setItem('klg_auth_role', authRole);
+    localStorage.setItem('klg_auth_driver', authDriverName);
+    localStorage.setItem('klg_selected_site', selectedSite);
+
+    nameSel.value = '';
+    pinEl.value = '';
+    renderNav();
+    showToast('✓ Login berhasil sebagai Driver (' + found.driverName + ')', 'success');
+    goTo(selectedSite ? 'dashboard' : 'siteselect');
+    loadData();
+  }
+
+  function roleLabel(role){
+    return role === 'admin' ? 'Admin' : role === 'pic' ? 'PIC' : role === 'driver' ? 'Driver' : 'Requester';
+  }
+
+  function doLogout(){
+    isLoggedIn = false;
+    authRole = '';
+    authDriverName = '';
+    selectedSite = '';
+    localStorage.removeItem('klg_auth_role');
+    localStorage.removeItem('klg_auth_driver');
+    localStorage.removeItem('klg_selected_site');
+    renderNav();
+    switchLoginTab('staff');
+    goTo('login');
+  }
+
+  function populateSiteDropdown(sites){
+    const sel = document.getElementById('f-site');
+    if(!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Pilih site…</option>' +
+      sites.map(s=>'<option value="'+esc(s)+'">'+esc(s)+'</option>').join('');
+    if(sites.includes(current)) sel.value = current;
+    applySiteFieldLock();
+    renderSiteSelect(sites);
+  }
+
+  /** Kunci/lepas dropdown site di form request sesuai site yang sedang
+   *  aktif. Requester/PIC yang fokus ke 1 site -> dikunci.
+   *  Admin yang pilih "Semua Site" -> bebas pilih site apapun. */
+  function applySiteFieldLock(){
+    const sel = document.getElementById('f-site');
+    if(!sel) return;
+    if(selectedSite && selectedSite !== 'ALL'){
+      if([...sel.options].some(o=>o.value===selectedSite)) sel.value = selectedSite;
+      sel.disabled = true;
+    } else {
+      sel.disabled = false;
+    }
+  }
+
+  /* ---- halaman pilih site (dengan ikon gedung) ---- */
+  let selectedSite = localStorage.getItem('klg_selected_site') || '';
+
+  function renderSiteSelect(sites){
+    const list = document.getElementById('siteselect-list');
+    if(!list) return;
+    let html = '';
+    if(isAdmin()){
+      html += '<button type="button" class="siteselect-card" onclick="selectSite(\'ALL\')" style="border-color:var(--primary);">'+
+        '<span class="bld" style="background:var(--primary);color:#fff;">🌐</span>'+
+        '<span class="txt"><span class="nm">Semua Site<span class="role-badge admin">ADMIN</span></span><span class="sub">Lihat &amp; kelola seluruh site sekaligus</span></span>'+
+        '<span class="arrow">›</span>'+
+      '</button>';
+    }
+    html += (sites||SITE_LIST).map(s=>
+      '<button type="button" class="siteselect-card" onclick="selectSite(\''+esc(s)+'\')">'+
+        '<span class="bld">🏢</span>'+
+        '<span class="txt"><span class="nm">'+esc(s)+'</span><span class="sub">Lihat &amp; request armada site ini</span></span>'+
+        '<span class="arrow">›</span>'+
+      '</button>'
+    ).join('');
+    list.innerHTML = html;
+  }
+
+  function selectSite(site){
+    // Driver login-nya sudah otomatis terkunci ke 1 site (dari DRIVER_ACCOUNTS),
+    // jadi tidak perlu ada pilihan site manual untuk driver.
+    if(isDriver()) return;
+    selectedSite = site;
+    localStorage.setItem('klg_selected_site', site);
+    const subtitle = document.getElementById('app-subtitle');
+    if(subtitle){
+      subtitle.textContent = site === 'ALL'
+        ? 'Operasional Armada · Semua Site (Admin)'
+        : 'Operasional Armada · ' + site;
+    }
+    applySiteFieldLock();
+    renderAll();
+    goTo('dashboard');
+  }
+
+  /** Panggil fungsi server-side (Code.gs) via google.script.run, dibungkus Promise.
+   *  Tidak butuh URL apapun — otomatis nempel ke deployment yang lagi dibuka,
+   *  jadi tidak akan rusak walau URL /exec berubah setelah redeploy. */
+  function runServer(fnName, ...args){
+    return new Promise((resolve, reject)=>{
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(reject)
+        [fnName](...args);
+    });
+  }
+
+  let STATE = { requests: [], armada: [], driver: [], pic: [] };
+  let openGroups = { 'Menunggu': true, 'Ditugaskan': true, 'Berjalan': true, 'Selesai': true };
+  let assignOpenTicket = null;
+  let driverActionOpenTicket = null;
+
+  const STATUS_COLORS = {
+    'Menunggu': 'var(--orange)',
+    'Ditugaskan': 'var(--blue)',
+    'Berjalan': 'var(--purple)',
+    'Selesai': 'var(--green)'
+  };
+  const STATUS_DIM = {
+    'Menunggu': 'var(--orange-dim)',
+    'Ditugaskan': 'var(--blue-dim)',
+    'Berjalan': 'var(--purple-dim)',
+    'Selesai': 'var(--green-dim)'
+  };
+  const STATUS_ORDER = ['Menunggu','Ditugaskan','Berjalan','Selesai'];
+
+  /* ======================= GPS / PETA LOKASI =======================
+   * Menyimpan koordinat opsional untuk "Titik Jemput" & "Tujuan" di form
+   * request. Pakai Leaflet + OpenStreetMap (gratis, tanpa API key), jadi
+   * cukup tap peta atau pakai tombol "Lokasi Saya" (GPS perangkat).
+   * Koordinat ini disimpan di kolom "Lat Awal"/"Lng Awal"/"Lat Tujuan"/
+   * "Lng Tujuan" pada sheet Requests, lalu dipakai untuk tombol
+   * "Buka Rute di Google Maps" di Papan Dispatch, Tugas Driver, Cek
+   * Status, dan Riwayat.
+   */
+  let formGps = { awal: null, tujuan: null }; // {lat, lng} per titik
+  let gpsModalTarget = null;      // 'awal' | 'tujuan'
+  let gpsModalMap = null;         // instance Leaflet untuk modal
+  let gpsModalMarker = null;
+  const DEFAULT_MAP_CENTER = [-6.301, 107.172]; // sekitar Cikarang, dipakai kalau belum ada titik
+  let gpsSearchResults = []; // hasil pencarian terakhir dari Nominatim, dipakai saat user pilih salah satu
+
+  /** Cari lokasi berdasarkan nama tempat/alamat (pakai Nominatim/OpenStreetMap,
+   *  gratis tanpa API key). Dipakai untuk titik jemput MAUPUN tujuan — modal
+   *  peta yang sama dipakai untuk keduanya (lihat gpsModalTarget). */
+  async function searchGpsLocation(){
+    const input = document.getElementById('gps-search-input');
+    const resultsBox = document.getElementById('gps-search-results');
+    const q = input.value.trim();
+    if(!q){ resultsBox.innerHTML = ''; return; }
+    resultsBox.innerHTML = '<div class="empty-body">Mencari…</div>';
+    try{
+      const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=6&countrycodes=id&q='+encodeURIComponent(q));
+      const data = await res.json();
+      gpsSearchResults = data || [];
+      if(gpsSearchResults.length === 0){
+        resultsBox.innerHTML = '<div class="empty-body">Lokasi tidak ditemukan. Coba kata kunci lain.</div>';
+        return;
+      }
+      resultsBox.innerHTML = gpsSearchResults.map((item, idx)=>
+        '<button type="button" class="gps-search-result" onclick="pickGpsSearchResult('+idx+')">📍 '+esc(item.display_name)+'</button>'
+      ).join('');
+    }catch(err){
+      console.error(err);
+      resultsBox.innerHTML = '<div class="empty-body">Gagal mencari lokasi. Cek koneksi internet.</div>';
+    }
+  }
+
+  /** Pilih salah satu hasil pencarian: taruh pin di titik itu & pindahkan
+   *  peta ke sana, untuk titik jemput ATAU tujuan sesuai modal yang aktif. */
+  function pickGpsSearchResult(idx){
+    const item = gpsSearchResults[idx];
+    if(!item) return;
+    const lat = parseFloat(item.lat), lng = parseFloat(item.lon);
+    placeGpsMarker(lat, lng);
+    document.getElementById('gps-search-input').value = item.display_name;
+    document.getElementById('gps-search-results').innerHTML = '';
+  }
+
+  function openGpsModal(target){
+    gpsModalTarget = target;
+    document.getElementById('gps-modal-title').textContent =
+      target === 'awal' ? 'Pilih Titik Jemput' : 'Pilih Titik Tujuan';
+    document.getElementById('gps-modal-overlay').classList.add('show');
+    document.getElementById('gps-search-input').value = '';
+    document.getElementById('gps-search-results').innerHTML = '';
+    gpsSearchResults = [];
+
+    // Leaflet butuh container yang sudah terlihat sebelum di-invalidate-size,
+    // jadi inisialisasi/refresh SETELAH modal ditampilkan.
+    setTimeout(()=>{
+      const existing = formGps[target];
+      const center = existing ? [existing.lat, existing.lng] : DEFAULT_MAP_CENTER;
+
+      if(!gpsModalMap){
+        gpsModalMap = L.map('gps-modal-map').setView(center, existing ? 15 : 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(gpsModalMap);
+        gpsModalMap.on('click', function(e){
+          placeGpsMarker(e.latlng.lat, e.latlng.lng);
+        });
+      } else {
+        gpsModalMap.setView(center, existing ? 15 : 11);
+      }
+
+      if(existing){
+        placeGpsMarker(existing.lat, existing.lng, false);
+      } else if(gpsModalMarker){
+        gpsModalMap.removeLayer(gpsModalMarker);
+        gpsModalMarker = null;
+      }
+
+      gpsModalMap.invalidateSize();
+    }, 60);
+  }
+
+  function placeGpsMarker(lat, lng, recenter){
+    if(gpsModalMarker){
+      gpsModalMarker.setLatLng([lat, lng]);
+    } else {
+      gpsModalMarker = L.marker([lat, lng], { draggable: true }).addTo(gpsModalMap);
+      gpsModalMarker.on('dragend', function(){
+        const p = gpsModalMarker.getLatLng();
+        pendingGpsPoint = { lat: p.lat, lng: p.lng };
+      });
+    }
+    pendingGpsPoint = { lat, lng };
+    if(recenter !== false) gpsModalMap.setView([lat, lng], 15);
+  }
+
+  let pendingGpsPoint = null;
+
+  /** Ambil lokasi GPS perangkat (browser Geolocation API) dan taruh pin di sana. */
+  function useMyGpsLocation(){
+    if(!navigator.geolocation){
+      showToast('Perangkat/browser ini tidak mendukung GPS', 'error');
+      return;
+    }
+    showToast('Mengambil lokasi GPS…', 'success');
+    navigator.geolocation.getCurrentPosition(
+      function(pos){
+        placeGpsMarker(pos.coords.latitude, pos.coords.longitude);
+      },
+      function(err){
+        console.error(err);
+        showToast('Gagal mengambil lokasi GPS. Pastikan izin lokasi diaktifkan.', 'error');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  /** Simpan titik yang sedang dipilih di modal ke field form (awal/tujuan),
+   *  lalu coba isi otomatis teks lokasi via reverse-geocoding (best-effort). */
+  async function saveGpsLocation(){
+    if(!pendingGpsPoint){
+      showToast('Tap peta dulu untuk menaruh pin lokasi', 'error');
+      return;
+    }
+    const target = gpsModalTarget;
+    formGps[target] = { lat: pendingGpsPoint.lat, lng: pendingGpsPoint.lng };
+    updateGpsHint(target);
+    closeGpsModal();
+    showToast('✓ Titik GPS ' + (target==='awal' ? 'jemput' : 'tujuan') + ' tersimpan', 'success');
+
+    // Best-effort: isi teks lokasi otomatis kalau field masih kosong.
+    const fieldId = target === 'awal' ? 'f-lokasi' : 'f-tujuan';
+    const fieldEl = document.getElementById(fieldId);
+    if(fieldEl && !fieldEl.value.trim()){
+      try{
+        const res = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+pendingGpsPoint.lat+'&lon='+pendingGpsPoint.lng);
+        const data = await res.json();
+        if(data && data.display_name){
+          fieldEl.value = data.display_name;
+        }
+      }catch(e){
+        // reverse-geocoding gagal (offline / rate-limit) — tidak masalah,
+        // koordinat tetap tersimpan, user tinggal isi teks lokasi manual.
+      }
+    }
+  }
+
+  function updateGpsHint(target){
+    const hint = document.getElementById('gps-hint-'+target);
+    if(!hint) return;
+    const p = formGps[target];
+    if(p){
+      hint.classList.remove('empty');
+      hint.innerHTML = '📍 GPS tersimpan: ' + p.lat.toFixed(5) + ', ' + p.lng.toFixed(5) +
+        ' <button type="button" class="copy-btn" style="margin-left:4px;padding:2px 7px;font-size:10px;" onclick="clearGps(\''+target+'\')">Hapus</button>';
+    } else {
+      hint.classList.add('empty');
+      hint.textContent = 'Belum ada titik GPS untuk lokasi ' + (target==='awal'?'jemput':'tujuan') + ' (opsional).';
+    }
+  }
+
+  function clearGps(target){
+    formGps[target] = null;
+    updateGpsHint(target);
+  }
+
+  function closeGpsModal(){
+    document.getElementById('gps-modal-overlay').classList.remove('show');
+    pendingGpsPoint = null;
+  }
+
+  /** Bangun URL Google Maps Directions dari data request. Pakai koordinat
+   *  GPS kalau ada, kalau tidak fallback ke teks alamat (tetap jalan tanpa
+   *  API key sama sekali). */
+  function mapsDirectionsUrl(r){
+    const origin = (r['Lat Awal'] && r['Lng Awal']) ? (r['Lat Awal']+','+r['Lng Awal']) : (r['Lokasi Awal']||'');
+    const dest = (r['Lat Tujuan'] && r['Lng Tujuan']) ? (r['Lat Tujuan']+','+r['Lng Tujuan']) : (r['Tujuan']||'');
+    if(!origin || !dest) return null;
+    return 'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(origin)+'&destination='+encodeURIComponent(dest)+'&travelmode=driving';
+  }
+
+  function mapsButtonHtml(r){
+    const url = mapsDirectionsUrl(r);
+    if(!url) return '';
+    return '<a class="btn-map" href="'+url+'" target="_blank" rel="noopener">🗺️ Buka Rute</a>';
+  }
+
+  /** Kumpulan link foto/dokumen bukti trip (odometer awal/akhir & bukti
+   *  biaya) yang diunggah driver saat Mulai/Selesai Tugas — dipakai di
+   *  Papan Dispatch, Cek Status, dan Riwayat. */
+  function buktiFotoHtml(r){
+    const links = [];
+    if(r['Foto KM Awal']) links.push('<a class="copy-btn" href="'+esc(r['Foto KM Awal'])+'" target="_blank" rel="noopener">📷 Foto KM Awal</a>');
+    if(r['Foto KM Akhir']) links.push('<a class="copy-btn" href="'+esc(r['Foto KM Akhir'])+'" target="_blank" rel="noopener">📷 Foto KM Akhir</a>');
+    if(r['Foto Bukti Biaya']) links.push('<a class="copy-btn" href="'+esc(r['Foto Bukti Biaya'])+'" target="_blank" rel="noopener">🧾 Bukti Biaya</a>');
+    if(r['Foto SIM'] && isPic()) links.push('<a class="copy-btn" href="'+esc(r['Foto SIM'])+'" target="_blank" rel="noopener">🪪 Foto SIM</a>');
+    if(r['Foto Dokumentasi']) links.push('<a class="copy-btn" href="'+esc(r['Foto Dokumentasi'])+'" target="_blank" rel="noopener">🚐 Dokumentasi Unit</a>');
+    let html = '';
+    if(links.length) html += '<div class="trip-row" style="flex-wrap:wrap;gap:6px;">'+links.join(' ')+'</div>';
+    if(r['Kebersihan Unit']) html += '<div class="trip-row">🧼 Kebersihan Unit: <b>'+esc(r['Kebersihan Unit'])+'</b></div>';
+    return html;
+  }
+
+  /** Render mini-map (Leaflet, read-only) untuk hasil Cek Status, kalau
+   *  minimal salah satu titik (awal/tujuan) punya koordinat GPS. */
+  let cekStatusMap = null;
+  function renderCekStatusMiniMap(r){
+    const hasAwal = r['Lat Awal'] && r['Lng Awal'];
+    const hasTujuan = r['Lat Tujuan'] && r['Lng Tujuan'];
+    if(!hasAwal && !hasTujuan) return;
+
+    setTimeout(()=>{
+      const mapEl = document.getElementById('cekstatus-mini-map');
+      if(!mapEl) return;
+      if(cekStatusMap){ cekStatusMap.remove(); cekStatusMap = null; }
+
+      const points = [];
+      if(hasAwal) points.push([parseFloat(r['Lat Awal']), parseFloat(r['Lng Awal'])]);
+      if(hasTujuan) points.push([parseFloat(r['Lat Tujuan']), parseFloat(r['Lng Tujuan'])]);
+
+      cekStatusMap = L.map('cekstatus-mini-map', { zoomControl:false, dragging:true, scrollWheelZoom:false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(cekStatusMap);
+
+      if(hasAwal) L.marker(points[0]).addTo(cekStatusMap).bindPopup('📍 Titik Jemput');
+      if(hasTujuan) L.marker(points[hasAwal?1:0]).addTo(cekStatusMap).bindPopup('🏁 Tujuan');
+      if(hasAwal && hasTujuan) L.polyline(points, { color:'#E12630', dashArray:'6,6' }).addTo(cekStatusMap);
+
+      if(points.length === 2) cekStatusMap.fitBounds(points, { padding:[24,24] });
+      else cekStatusMap.setView(points[0], 14);
+      cekStatusMap.invalidateSize();
+    }, 60);
+  }
+
+  /* ======================= FILTER PER SITE =======================
+   * scoped(list) memfilter data sesuai site yang sedang aktif.
+   * - Requester / PIC yang fokus ke 1 site -> hanya lihat site itu.
+   * - Admin yang pilih "Semua Site" -> tidak difilter (null = semua). */
+  function siteScope(){
+    if(isAdmin() && (selectedSite === '' || selectedSite === 'ALL')) return null;
+    return selectedSite;
+  }
+  function scoped(list){
+    const scope = siteScope();
+    if(!scope) return list || [];
+    return (list||[]).filter(item => (item['Site']||'') === scope);
+  }
+
+  function renderNav(){
+    const nav = document.getElementById('bottomnav');
+    if(!isLoggedIn){ nav.innerHTML = ''; return; }
+    const logoutBtn = '<button class="nav-btn" onclick="doLogout()"><span class="ic">🚪</span>Logout</button>';
+    if(isRequester()){
+      nav.innerHTML =
+        '<button class="nav-btn" data-view="dashboard" onclick="goTo(\'dashboard\')"><span class="ic">🏠</span>Home</button>'+
+        '<button class="nav-btn" data-view="request" onclick="goTo(\'request\')"><span class="ic">➕</span>Request</button>'+
+        '<button class="nav-btn" data-view="status" onclick="goTo(\'status\')"><span class="ic">🔍</span>Cek Status</button>'+
+        logoutBtn;
+    } else if(isDriver()){
+      nav.innerHTML =
+        '<button class="nav-btn" data-view="dashboard" onclick="goTo(\'dashboard\')"><span class="ic">🏠</span>Tugas Saya</button>'+
+        '<button class="nav-btn" data-view="riwayat" onclick="goTo(\'riwayat\')"><span class="ic">🕘</span>Riwayat</button>'+
+        '<button class="nav-btn" data-view="status" onclick="goTo(\'status\')"><span class="ic">🔍</span>Cek Status</button>'+
+        logoutBtn;
+    } else { // pic / admin
+      nav.innerHTML =
+        '<button class="nav-btn" data-view="dashboard" onclick="goTo(\'dashboard\')"><span class="ic">🏠</span>Dashboard</button>'+
+        '<button class="nav-btn" data-view="request" onclick="goTo(\'request\')"><span class="ic">➕</span>Request Baru</button>'+
+        '<button class="nav-btn" data-view="status" onclick="goTo(\'status\')"><span class="ic">🔍</span>Cek Status</button>'+
+        '<button class="nav-btn" data-view="riwayat" onclick="goTo(\'riwayat\')"><span class="ic">🕘</span>Riwayat</button>'+
+        '<button class="nav-btn" data-view="fleet" onclick="goTo(\'fleet\')"><span class="ic">🗺️</span>Fleet</button>'+
+        '<button class="nav-btn" data-view="armada" onclick="goTo(\'armada\')"><span class="ic">🚙</span>Armada&nbsp;&amp;&nbsp;Driver</button>'+
+        logoutBtn;
+    }
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===currentView));
+  }
+
+  /* ======================= NAV ======================= */
+  let currentView = 'login';
+  let lastLoadAt = 0;
+  const DATA_VIEWS = ['dashboard','status','riwayat','fleet','armada'];
+
+  function goTo(view){
+    if(!isLoggedIn && view !== 'login'){
+      view = 'login';
+    }
+    if(isLoggedIn && view !== 'siteselect' && view !== 'login' && !selectedSite){
+      view = 'siteselect';
+    }
+    // "Armada & Driver" (kelola) hanya untuk PIC/Admin
+    if(view === 'armada' && !isPic()){
+      view = 'dashboard';
+    }
+    // Driver tidak submit request kendaraan
+    if(view === 'request' && isDriver()){
+      view = 'dashboard';
+    }
+    currentView = view;
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+view).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+    document.getElementById('bottomnav').style.display = (view === 'siteselect' || view === 'login') ? 'none' : 'flex';
+    const changeSiteBtn = document.getElementById('change-site-btn');
+    if(changeSiteBtn) changeSiteBtn.style.display = (view !== 'siteselect' && view !== 'login' && selectedSite && !isDriver()) ? 'flex' : 'none';
+    window.scrollTo(0,0);
+    if(isLoggedIn && DATA_VIEWS.includes(view) && (Date.now() - lastLoadAt > 3000)){
+      loadData();
+    }
+  }
+
+  /* ======================= LOAD DATA ======================= */
+  let isLoadingData = false;
+  function loadData(manual, isRetry){
+    if(!isLoggedIn) return; // jangan tarik data sebelum login
+    if(isLoadingData && !manual) return; // hindari request numpuk/tabrakan
+    isLoadingData = true;
+    lastLoadAt = Date.now();
+    const btn = document.getElementById('refresh-btn');
+    const statusEl = document.getElementById('last-updated');
+    if(manual && btn){ btn.disabled = true; btn.innerHTML = '⏳ Memuat…'; }
+    if(statusEl && !isRetry){ statusEl.textContent = 'Memuat data…'; }
+
+    let settled = false;
+    const timeoutId = setTimeout(()=>{
+      if(settled) return;
+      settled = true;
+      handleFail();
+    }, 15000);
+
+    google.script.run
+      .withSuccessHandler(function(data){
+        if(settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        STATE = data;
+        STATE.armada = normalizeArmadaList(STATE.armada);
+        STATE.driver = normalizeDriverList(STATE.driver);
+        STATE.pic = normalizePicList(STATE.pic);
+        if(STATE.sites && STATE.sites.length) populateSiteDropdown(STATE.sites);
+        renderAll();
+        applyDeepLink();
+        // Kalau sedang membuka hasil Cek Status, refresh juga tampilannya
+        // dengan data terbaru (penting untuk trip self-drive yang statusnya
+        // di-update requester sendiri lewat halaman ini).
+        if(lastCekStatusRequest){
+          const updated = (STATE.requests||[]).find(x=>x['Ticket ID']===lastCekStatusRequest['Ticket ID']);
+          if(updated){
+            lastCekStatusRequest = updated;
+            if(currentView === 'status') renderCekStatusResult();
+          }
+        }
+        isLoadingData = false;
+        if(btn){ btn.disabled = false; btn.innerHTML = '🔄 Refresh'; }
+        if(statusEl){ statusEl.textContent = 'Update terakhir: ' + new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+      })
+      .withFailureHandler(function(err){
+        if(settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        console.error('getAppData gagal:', err);
+        handleFail();
+      })
+      .getAppData();
+
+    function handleFail(){
+      isLoadingData = false;
+      if(!isRetry){
+        // Coba sekali lagi otomatis sebelum lapor gagal ke user (network mobile suka putus sesaat)
+        setTimeout(()=>loadData(manual, true), 1500);
+        return;
+      }
+      document.querySelectorAll('.loading-row').forEach(el=>el.textContent = 'Gagal memuat data. Cek koneksi.');
+      if(btn){ btn.disabled = false; btn.innerHTML = '🔄 Refresh'; }
+      if(statusEl){ statusEl.textContent = 'Gagal update. Coba refresh lagi.'; }
+    }
+  }
+
+  /* ======================= RENDER ======================= */
+  function renderAll(){
+    if(!isLoggedIn) return;
+
+    document.getElementById('dash-requester').style.display = isRequester() ? 'block' : 'none';
+    document.getElementById('dash-pic').style.display = isPic() ? 'block' : 'none';
+    document.getElementById('dash-driver').style.display = isDriver() ? 'block' : 'none';
+
+    if(isRequester()){
+      renderRecentRequestsRequester();
+    } else if(isDriver()){
+      renderDriverTasks();
+      renderDriverRecentHistory();
+    } else {
+      renderQuickGrid();
+      renderSiteAvailability();
+      renderStats();
+      renderDistribution();
+      renderRekap();
+      renderArmadaList();
+      renderDispatchBoard();
+    }
+
+    renderRiwayat();
+    renderFleet();
+    if(isPic()) renderArmadaDetail();
+  }
+
+  function renderQuickGrid(){
+    const el = document.getElementById('quick-grid');
+    if(!el) return;
+    el.innerHTML =
+      '<button type="button" class="quick-item" onclick="goTo(\'status\')"><span class="ic" style="background:var(--orange-dim);">🔍</span><span>Cek Status</span></button>'+
+      '<button type="button" class="quick-item" onclick="goTo(\'fleet\')"><span class="ic" style="background:var(--blue-dim);">🚐</span><span>Armada</span></button>'+
+      '<button type="button" class="quick-item" onclick="goTo(\'armada\')"><span class="ic" style="background:var(--purple-dim);">🚙</span><span>Armada &amp; Driver</span></button>';
+  }
+
+  function renderRecentRequestsRequester(){
+    const el = document.getElementById('recent-requests-requester');
+    if(!el) return;
+    const reqs = scoped(STATE.requests || []).slice().reverse().slice(0, 6);
+    if(reqs.length === 0){ el.innerHTML = '<div class="empty-body">Belum ada request masuk.</div>'; return; }
+    el.innerHTML = reqs.map(r=>{
+      const status = r['Status'] || 'Menunggu';
+      return '<div class="recent-trip-item">'+
+        '<div class="row1"><span class="tkt">'+esc(r['Ticket ID']||'')+'</span>'+
+          '<span class="trip-badge" style="background:'+(STATUS_DIM[status]||'')+';color:'+(STATUS_COLORS[status]||'var(--text)')+';">'+status.toUpperCase()+'</span></div>'+
+        '<div class="route">'+esc(r['Nama']||'')+' · '+esc(r['Site']||'')+' → '+esc(r['Tujuan']||'')+'</div>'+
+        '<div class="meta">'+esc(r['Tanggal']||'')+' · '+esc(r['Jam']||'')+' · '+esc(r['Jumlah Penumpang']||'')+' penumpang</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  function renderSiteAvailability(){
+    const el = document.getElementById('site-availability');
+    if(!el) return;
+    const armada = scoped(STATE.armada || []);
+    if(armada.length === 0){ el.innerHTML = '<div class="empty-body">Belum ada data armada.</div>'; return; }
+    const groups = groupBySite(armada);
+    el.innerHTML = groups.map(g=>{
+      const total = g.items.length;
+      const tersedia = g.items.filter(a=>a['Status']==='Tersedia').length;
+      const pct = total ? Math.round(tersedia/total*100) : 0;
+      return '<div class="site-avail-card">'+
+        '<div class="nm">'+esc(g.site)+'</div>'+
+        '<div class="ratio">'+tersedia+'/'+total+'</div>'+
+        '<div class="lbl">unit tersedia</div>'+
+        '<div class="bar"><i style="width:'+pct+'%;"></i></div>'+
+      '</div>';
+    }).join('');
+  }
+
+  function todayStr(){
+    const d = new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function monthStr(){
+    const d = new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  }
+
+  function renderStats(){
+    const reqs = scoped(STATE.requests || []);
+    const today = todayStr();
+    const hariIni = reqs.filter(r => r['Tanggal'] === today).length;
+    const menunggu = reqs.filter(r => r['Status'] === 'Menunggu').length;
+    const berjalan = reqs.filter(r => r['Status'] === 'Berjalan').length;
+    const armada = scoped(STATE.armada || []);
+    const tersedia = armada.filter(a => a['Status'] === 'Tersedia').length;
+
+    document.getElementById('stat-hari-ini').textContent = hariIni;
+    document.getElementById('stat-menunggu').textContent = menunggu;
+    document.getElementById('stat-berjalan').textContent = berjalan;
+    document.getElementById('stat-armada').textContent = tersedia + '/' + armada.length;
+  }
+
+  function renderDistribution(){
+    const reqs = scoped(STATE.requests || []);
+    const total = reqs.length || 1;
+    const bar = document.getElementById('dist-bar');
+    const legend = document.getElementById('dist-legend');
+    bar.innerHTML = '';
+    legend.innerHTML = '';
+    STATUS_ORDER.forEach(status=>{
+      const count = reqs.filter(r=>r['Status']===status).length;
+      const pct = (count/total*100);
+      const seg = document.createElement('span');
+      seg.style.width = pct + '%';
+      seg.style.background = STATUS_COLORS[status];
+      if(count>0) bar.appendChild(seg);
+
+      const row = document.createElement('div');
+      row.className = 'dist-row';
+      row.innerHTML = '<span class="dist-dot" style="background:'+STATUS_COLORS[status]+'"></span>'+
+                       '<span class="lbl">'+status+'</span><span class="val">'+count+'</span>';
+      legend.appendChild(row);
+    });
+  }
+
+  /** Rekap total KM & total biaya untuk trip yang sudah "Selesai" bulan ini
+   *  (dari sisi PIC/Admin, sesuai site yang aktif). */
+  function calcRekap(reqs){
+    const bulan = monthStr();
+    let totalKm = 0, totalBiaya = 0;
+    reqs.filter(r => r['Status'] === 'Selesai' && String(r['Tanggal']||'').startsWith(bulan)).forEach(r=>{
+      const awal = parseFloat(r['KM Awal']);
+      const akhir = parseFloat(r['KM Akhir']);
+      if(!isNaN(awal) && !isNaN(akhir) && akhir > awal) totalKm += (akhir - awal);
+      const biaya = parseFloat(r['Total Biaya']);
+      if(!isNaN(biaya)) totalBiaya += biaya;
+    });
+    return { totalKm, totalBiaya };
+  }
+
+  function renderRekap(){
+    const reqs = scoped(STATE.requests || []);
+    const { totalKm, totalBiaya } = calcRekap(reqs);
+    const kmEl = document.getElementById('rekap-km');
+    const biayaEl = document.getElementById('rekap-biaya');
+    if(kmEl) kmEl.textContent = totalKm.toLocaleString('id-ID') + ' km';
+    if(biayaEl) biayaEl.textContent = 'Rp ' + totalBiaya.toLocaleString('id-ID');
+  }
+
+  /** Kelompokkan list (armada/driver/dll) berdasarkan field 'Site', urut sesuai SITE_LIST */
+  function groupBySite(list){
+    const groups = {};
+    (list||[]).forEach(item=>{
+      const s = item['Site'] || 'Lainnya';
+      if(!groups[s]) groups[s] = [];
+      groups[s].push(item);
+    });
+    const order = SITE_LIST.filter(s=>groups[s]).concat(Object.keys(groups).filter(s=>!SITE_LIST.includes(s)));
+    return order.map(site=>({ site, items: groups[site] }));
+  }
+
+  function renderArmadaList(){
+    const armada = scoped(STATE.armada || []);
+    const el = document.getElementById('armada-list');
+    if(armada.length === 0){ el.innerHTML = '<div class="empty-body">Belum ada data armada.</div>'; return; }
+    el.innerHTML = armada.map(a=>{
+      const badgeClass = a['Status']==='Tersedia' ? 'tersedia' : 'dipakai';
+      return '<div class="armada-item">'+
+        '<div class="armada-info">'+(a['Site']?'<span class="site-tag">'+esc(a['Site'])+'</span>':'')+'<span class="armada-plate">'+esc(a['No Polisi']||a['Kode']||'')+'</span>'+
+        '<span class="armada-jenis">'+esc(a['Jenis']||'')+'</span></div>'+
+        '<span class="badge '+badgeClass+'">'+esc((a['Status']||'').toUpperCase())+'</span></div>';
+    }).join('');
+  }
+
+  function renderDispatchBoard(){
+    const reqs = scoped(STATE.requests || []).slice().reverse();
+    const el = document.getElementById('dispatch-board');
+    el.innerHTML = STATUS_ORDER.map(status=>{
+      const items = reqs.filter(r=>r['Status']===status);
+      const isOpen = openGroups[status];
+      return '<div class="status-group '+(isOpen?'open':'')+'" data-status="'+status+'">'+
+        '<div class="status-group-head" onclick="toggleGroup(\''+status+'\')">'+
+          '<div class="left"><span class="dot" style="background:'+STATUS_COLORS[status]+'"></span>'+status+'</div>'+
+          '<div style="display:flex;align-items:center;gap:8px;"><span class="count">'+items.length+' trip</span><span class="chev">▾</span></div>'+
+        '</div>'+
+        '<div class="status-group-body">'+
+          (items.length===0 ? '<div class="empty-body">Tidak ada trip.</div>' : items.map(r=>renderTripCardPic(r, status)).join('')) +
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  /** Kartu trip untuk sisi PIC/Admin: hanya Assign Armada (Menunggu),
+   *  Notify (Ditugaskan/Berjalan), dan tombol buka rute Google Maps kalau
+   *  ada koordinat GPS. Mulai/Selesai tugas sekarang jadi wewenang Driver
+   *  (lihat renderDriverTaskCard). */
+  function renderTripCardPic(r, status){
+    const ticket = r['Ticket ID'];
+    const badgeStyle = 'background:'+STATUS_DIM[status]+';color:'+STATUS_COLORS[status]+';';
+    const selfDrive = isSelfDriveReq(r);
+    let actions = '';
+    if(status === 'Menunggu'){
+      actions = '<div class="trip-actions"><button class="btn-assign" onclick="toggleAssign(\''+ticket+'\')">Assign Armada'+(selfDrive?' (Self-Drive)':'')+'</button>'+mapsButtonHtml(r)+'</div>';
+      if(assignOpenTicket === ticket){
+        const reqSite = r['Site'] || '';
+        const allTersedia = (STATE.armada||[]).filter(a=>a['Status']==='Tersedia');
+        const available = reqSite ? allTersedia.filter(a=>a['Site']===reqSite) : allTersedia;
+        const siteDrivers = (STATE.driver||[]).filter(dr=>!reqSite || dr['Site']===reqSite);
+        const driverListId = 'driverlist-'+ticket;
+        actions += '<div class="assign-box">'+
+          (reqSite && available.length===0 && allTersedia.length>0 ? '<div class="empty-body" style="margin-bottom:8px;">Tidak ada armada tersedia di site '+esc(reqSite)+'. Menampilkan semua armada tersedia sebagai alternatif.</div>' : '')+
+          (selfDrive ? '<div class="empty-body" style="margin-bottom:8px;color:var(--blue);">🚗 Request ini "Unit Saja" (self-drive) — tidak perlu isi nama driver. Requester sendiri yang akan update Mulai/Selesai lewat Cek Status.</div>' : '')+
+          '<select id="assign-armada-'+ticket+'">'+
+            ((available.length? available : allTersedia).length? (available.length?available:allTersedia).map(a=>{
+              const nopol = a['No Polisi'] || a['No. Polisi'] || a['Plat'] || '';
+              const jenis = a['Jenis'] || '';
+              const label = (nopol ? esc(nopol) : esc(a['Kode'])) + (jenis ? ' — ' + esc(jenis) : '') + (a['Site'] ? ' · ' + esc(a['Site']) : '') + (nopol && a['Kode'] ? ' (' + esc(a['Kode']) + ')' : '');
+              return '<option value="'+esc(a['Kode'])+'">'+label+'</option>';
+            }).join('') : '<option value="">Tidak ada armada tersedia</option>')+
+          '</select>'+
+          (selfDrive ? '' :
+            '<input type="text" id="assign-driver-'+ticket+'" placeholder="Nama driver (harus persis sama dgn akun login driver)" list="'+driverListId+'">'+
+            '<datalist id="'+driverListId+'">'+
+              siteDrivers.map(dr=>'<option value="'+esc(dr['Nama Driver'])+'">').join('')+
+            '</datalist>'+
+            '<p class="hint">Setelah dikonfirmasi, notifikasi WhatsApp ke requester akan otomatis terbuka (driver, kontak &amp; cost center).</p>'
+          )+
+          '<button onclick="confirmAssign(\''+ticket+'\')">Konfirmasi Assign</button>'+
+        '</div>';
+      }
+    } else if(status === 'Ditugaskan' || status === 'Berjalan'){
+      actions = '<div class="trip-actions"><button class="btn-wa" style="flex:1;padding:9px;font-size:12px;" onclick="notifyRequester(\''+ticket+'\')">📤 Notify Requester</button>'+mapsButtonHtml(r)+'</div>';
+    } else if(status === 'Selesai'){
+      const mapsHtml = mapsButtonHtml(r);
+      if(mapsHtml) actions = '<div class="trip-actions">'+mapsHtml+'</div>';
+    }
+
+    return '<div class="trip-card">'+
+      '<div class="trip-top"><div>'+(r['Site']?'<span class="site-tag">'+esc(r['Site'])+'</span>':'')+(selfDrive?'<span class="site-tag" style="color:var(--blue);background:var(--blue-dim);">🚗 SELF-DRIVE</span>':'')+'<div class="trip-name">'+esc(r['Nama']||'')+'</div>'+
+        '<div class="trip-ticket">'+esc(ticket)+' · '+esc(r['Kontak']||'')+' · CC: '+esc(r['Cost Center']||'-')+'</div></div>'+
+        '<span class="trip-badge" style="'+badgeStyle+'">'+status.toUpperCase()+'</span></div>'+
+      '<div class="trip-row">📍 '+esc(r['Lokasi Awal']||'')+' → '+esc(r['Tujuan']||'')+'</div>'+
+      '<div class="trip-row">🕒 '+esc(r['Tanggal']||'')+' · berangkat '+esc(r['Jam']||'')+' · pulang '+esc(r['Jam Pulang']||'-')+'</div>'+
+      '<div class="trip-row">👥 '+esc(r['Jumlah Penumpang']||'')+' penumpang · '+esc(r['Jenis Kendaraan']||'')+'</div>'+
+      (r['Armada Assigned'] ? '<div class="trip-row">🚐 '+esc(getArmadaLabel(r['Armada Assigned']))+(r['Driver'] ? ' · '+esc(r['Driver']) : (selfDrive ? ' · <b>Tanpa Driver (diambil sendiri)</b>' : ''))+'</div>' : '')+
+      (selfDrive && r['Foto SIM'] && status!=='Selesai' ? '<div class="trip-row">🪪 <a class="copy-btn" href="'+esc(r['Foto SIM'])+'" target="_blank" rel="noopener">Lihat Foto SIM</a></div>' : '')+
+      (status==='Berjalan' && r['KM Awal'] ? '<div class="trip-row">🛣️ KM Awal: '+esc(r['KM Awal'])+' (mulai '+esc(r['Waktu Mulai']||'-')+')</div>' : '')+
+      (status==='Selesai' ? '<div class="trip-row">🛣️ '+esc(r['KM Awal']||'-')+' → '+esc(r['KM Akhir']||'-')+' km · 💵 Rp '+esc(r['Total Biaya']||'0')+'</div>'+buktiFotoHtml(r) : '')+
+      actions+
+    '</div>';
+  }
+
+  /* ======================= DASHBOARD DRIVER ======================= */
+  function driverAssignedRequests(){
+    return (STATE.requests || []).filter(r => sameName(r['Driver'], authDriverName));
+  }
+
+  function renderDriverTasks(){
+    const el = document.getElementById('driver-tasks');
+    if(!el) return;
+    const mine = driverAssignedRequests().filter(r => r['Status']==='Ditugaskan' || r['Status']==='Berjalan');
+    if(mine.length === 0){ el.innerHTML = '<div class="empty-body">Belum ada tugas yang di-assign ke kamu saat ini.</div>'; return; }
+    el.innerHTML = mine.slice().reverse().map(r=>renderDriverTaskCard(r)).join('');
+  }
+
+  function renderDriverTaskCard(r){
+    const ticket = r['Ticket ID'];
+    const status = r['Status'];
+    const badgeStyle = 'background:'+STATUS_DIM[status]+';color:'+STATUS_COLORS[status]+';';
+    let actions = '<div class="trip-actions">'+mapsButtonHtml(r);
+
+    if(status === 'Ditugaskan'){
+      actions += '<button class="btn-start" onclick="toggleDriverAction(\''+ticket+'\')">🚦 Mulai Tugas</button></div>';
+      if(driverActionOpenTicket === ticket){
+        actions += startTripFormHtml(ticket, 'km-awal-', 'foto-km-awal-', 'btn-confirm-start-', 'confirmStartTrip');
+      }
+    } else if(status === 'Berjalan'){
+      actions += '<button class="btn-finish" onclick="toggleDriverAction(\''+ticket+'\')">🏁 Selesai Tugas</button></div>';
+      if(driverActionOpenTicket === ticket){
+        actions += finishTripFormHtml(ticket, 'd-', 'confirmFinishTrip');
+      }
+    } else {
+      actions += '</div>';
+    }
+
+    return '<div class="task-card">'+
+      '<div class="trip-top"><div>'+(r['Site']?'<span class="site-tag">'+esc(r['Site'])+'</span>':'')+'<div class="trip-name">'+esc(r['Nama']||'')+'</div>'+
+        '<div class="trip-ticket">'+esc(ticket)+' · '+esc(r['Kontak']||'')+'</div></div>'+
+        '<span class="trip-badge" style="'+badgeStyle+'">'+status.toUpperCase()+'</span></div>'+
+      '<div class="trip-row">📍 '+esc(r['Lokasi Awal']||'')+' → '+esc(r['Tujuan']||'')+'</div>'+
+      '<div class="trip-row">🕒 '+esc(r['Tanggal']||'')+' · berangkat '+esc(r['Jam']||'')+' · pulang '+esc(r['Jam Pulang']||'-')+'</div>'+
+      '<div class="trip-row">🚐 '+esc(getArmadaLabel(r['Armada Assigned']))+'</div>'+
+      (status==='Berjalan' && r['KM Awal'] ? '<div class="trip-row">🛣️ KM Awal tercatat: '+esc(r['KM Awal'])+(r['Foto KM Awal']?' · <a href="'+esc(r['Foto KM Awal'])+'" target="_blank" rel="noopener">📷 lihat foto</a>':'')+'</div>' : '')+
+      actions+
+    '</div>';
+  }
+
+  function toggleDriverAction(ticket){
+    driverActionOpenTicket = (driverActionOpenTicket === ticket) ? null : ticket;
+    renderDriverTasks();
+  }
+
+  /** Baca file (foto/dokumen) sebagai base64. Kalau file berupa gambar,
+   *  otomatis dikompres/resize dulu (maks lebar 1280px, JPEG q=0.7) supaya
+   *  ukuran upload tetap kecil & cepat di jaringan mobile. File non-gambar
+   *  (mis. PDF bukti biaya) dikirim apa adanya. */
+  function readFileSmart(file, maxWidth, quality){
+    maxWidth = maxWidth || 1280; quality = quality || 0.7;
+    return new Promise((resolve, reject)=>{
+      if(!file){ reject(new Error('no file')); return; }
+      const reader = new FileReader();
+      if(file.type && file.type.startsWith('image/')){
+        reader.onload = function(e){
+          const img = new Image();
+          img.onload = function(){
+            let w = img.width, h = img.height;
+            if(w > maxWidth){ h = Math.round(h * maxWidth / w); w = maxWidth; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            resolve({ base64: dataUrl.split(',')[1], mime: 'image/jpeg', ext: 'jpg' });
+          };
+          img.onerror = ()=>reject(new Error('Gagal membaca gambar'));
+          img.src = e.target.result;
+        };
+      } else {
+        reader.onload = function(e){
+          const result = e.target.result;
+          const base64 = result.split(',')[1];
+          const mime = file.type || 'application/octet-stream';
+          const ext = mime === 'application/pdf' ? 'pdf' : 'bin';
+          resolve({ base64, mime, ext });
+        };
+      }
+      reader.onerror = ()=>reject(new Error('Gagal membaca file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /** Upload satu file ke Drive lewat backend, kembalikan URL-nya. */
+  async function uploadTripFileFor(ticket, file, label, sensitif){
+    // SIM: resolusi/kualitas lebih kecil (tetap terbaca) supaya upload jauh lebih cepat
+    const { base64, mime, ext } = sensitif ? await readFileSmart(file, 1024, 0.6) : await readFileSmart(file);
+    const fileName = ticket + '-' + label + '-' + Date.now() + '.' + ext;
+    const res = await runServer('uploadTripFile', base64, mime, fileName, !!sensitif);
+    return res && res.url ? res.url : '';
+  }
+
+  /** HTML form "Mulai Tugas" (dipakai driver & requester self-drive). */
+  function startTripFormHtml(ticket, prefix, fotoPrefix, btnPrefix, fnName){
+    return '<div class="assign-box">'+
+      '<label style="font-size:11.5px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:5px;">KM Awal (odometer) <span style="color:var(--red);">*</span></label>'+
+      '<input type="number" inputmode="numeric" id="'+prefix+ticket+'" placeholder="Cth: 45210">'+
+      '<label style="font-size:11.5px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:5px;">Foto Odometer (KM Awal) <span style="color:var(--red);">*</span></label>'+
+      '<input type="file" accept="image/*" capture="environment" id="'+fotoPrefix+ticket+'">'+
+      '<button onclick="'+fnName+'(\''+ticket+'\')" id="'+btnPrefix+ticket+'">Konfirmasi Mulai</button>'+
+    '</div>';
+  }
+
+  /** HTML form "Selesai Tugas" (dipakai driver & requester self-drive) —
+   *  sekarang termasuk kondisi kebersihan unit & foto dokumentasi umum. */
+  function finishTripFormHtml(ticket, prefix, fnName){
+    return '<div class="assign-box">'+
+      '<label style="font-size:11.5px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:5px;">KM Akhir (odometer) <span style="color:var(--red);">*</span></label>'+
+      '<input type="number" inputmode="numeric" id="'+prefix+'km-akhir-'+ticket+'" placeholder="Cth: 45280">'+
+      '<label style="font-size:11.5px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:5px;">Foto Odometer (KM Akhir) <span style="color:var(--red);">*</span></label>'+
+      '<input type="file" accept="image/*" capture="environment" id="'+prefix+'foto-km-akhir-'+ticket+'">'+
+      '<label style="font-size:11.5px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:5px;">Total Biaya (BBM, tol, parkir, dll) <span style="color:var(--red);">*</span></label>'+
+      '<input type="number" inputmode="numeric" id="'+prefix+'biaya-'+ticket+'" placeholder="Cth: 75000">'+
+      '<label style="font-size:11.5px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:5px;">Foto/Dokumen Bukti Biaya (struk/nota) <span style="color:var(--red);">*</span></label>'+
+      '<input type="file" accept="image/*,application/pdf" id="'+prefix+'foto-biaya-'+ticket+'">'+
+      '<label style="font-size:11.5px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:5px;">Kondisi Kebersihan Unit <span style="color:var(--red);">*</span></label>'+
+      '<select id="'+prefix+'kebersihan-'+ticket+'">'+
+        '<option value="">Pilih kondisi…</option>'+
+        '<option value="Bersih">Bersih</option>'+
+        '<option value="Cukup Bersih">Cukup Bersih</option>'+
+        '<option value="Kotor">Kotor</option>'+
+      '</select>'+
+      '<label style="font-size:11.5px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:5px;">Foto Dokumentasi Kondisi Unit <span style="color:var(--red);">*</span></label>'+
+      '<input type="file" accept="image/*" id="'+prefix+'foto-dok-'+ticket+'">'+
+      '<button onclick="'+fnName+'(\''+ticket+'\')" id="'+prefix+'btn-finish-'+ticket+'">Konfirmasi Selesai</button>'+
+    '</div>';
+  }
+
+  /** Logika inti "Mulai Tugas" — dipakai baik oleh driver maupun requester
+   *  (untuk trip self-drive lewat Cek Status). */
+  async function performStartTrip(ticket, ids, afterSuccess){
+    const input = document.getElementById(ids.km);
+    const fotoInput = document.getElementById(ids.foto);
+    const kmAwal = input ? input.value.trim() : '';
+    if(!kmAwal || isNaN(parseFloat(kmAwal))){ showToast('Isi KM Awal dengan angka yang valid', 'error'); return; }
+    if(!fotoInput || !fotoInput.files || !fotoInput.files[0]){ showToast('Lampirkan foto odometer KM Awal', 'error'); return; }
+
+    const btn = document.getElementById(ids.btn);
+    if(btn){ btn.disabled = true; btn.textContent = 'Mengunggah foto…'; }
+    try{
+      const fotoUrl = await uploadTripFileFor(ticket, fotoInput.files[0], 'km-awal');
+      await runServer('startTrip', { ticket_id: ticket, km_awal: kmAwal, foto_km_awal_url: fotoUrl });
+      showToast('✓ Perjalanan dimulai, KM Awal & foto tercatat', 'success');
+      setTimeout(()=>{ loadData(); if(afterSuccess) afterSuccess(); }, 700);
+    }catch(err){
+      console.error(err);
+      showToast('Gagal menyimpan/mengunggah foto. Cek koneksi.', 'error');
+      if(btn){ btn.disabled = false; btn.textContent = 'Konfirmasi Mulai'; }
+    }
+  }
+
+  /** Logika inti "Selesai Tugas" — dipakai baik oleh driver maupun
+   *  requester (untuk trip self-drive lewat Cek Status). */
+  async function performFinishTrip(ticket, ids, afterSuccess){
+    const kmAkhir = document.getElementById(ids.km).value.trim();
+    const biaya = document.getElementById(ids.biaya).value.trim();
+    const fotoKmInput = document.getElementById(ids.fotoKm);
+    const fotoBiayaInput = document.getElementById(ids.fotoBiaya);
+    const kebersihanSel = document.getElementById(ids.kebersihan);
+    const fotoDokInput = document.getElementById(ids.fotoDok);
+
+    if(!kmAkhir || isNaN(parseFloat(kmAkhir))){ showToast('Isi KM Akhir dengan angka yang valid', 'error'); return; }
+    if(biaya === '' || isNaN(parseFloat(biaya))){ showToast('Isi Total Biaya dengan angka yang valid', 'error'); return; }
+    if(!fotoKmInput || !fotoKmInput.files || !fotoKmInput.files[0]){ showToast('Lampirkan foto odometer KM Akhir', 'error'); return; }
+    if(!fotoBiayaInput || !fotoBiayaInput.files || !fotoBiayaInput.files[0]){ showToast('Lampirkan foto/dokumen bukti biaya', 'error'); return; }
+    if(!kebersihanSel || !kebersihanSel.value){ showToast('Pilih kondisi kebersihan unit', 'error'); return; }
+    if(!fotoDokInput || !fotoDokInput.files || !fotoDokInput.files[0]){ showToast('Lampirkan foto dokumentasi kondisi unit', 'error'); return; }
+
+    const req = (STATE.requests||[]).find(r=>r['Ticket ID']===ticket);
+    const btn = document.getElementById(ids.btn);
+    if(btn){ btn.disabled = true; btn.textContent = 'Mengunggah foto…'; }
+    try{
+      const fotoKmUrl = await uploadTripFileFor(ticket, fotoKmInput.files[0], 'km-akhir');
+      const fotoBiayaUrl = await uploadTripFileFor(ticket, fotoBiayaInput.files[0], 'bukti-biaya');
+      const fotoDokUrl = await uploadTripFileFor(ticket, fotoDokInput.files[0], 'dokumentasi-unit');
+      await runServer('finishTrip', {
+        ticket_id: ticket, km_akhir: kmAkhir, total_biaya: biaya,
+        armada_kode_untuk_update: req ? req['Armada Assigned'] : '',
+        foto_km_akhir_url: fotoKmUrl, foto_biaya_url: fotoBiayaUrl,
+        kebersihan_unit: kebersihanSel.value, foto_dokumentasi_url: fotoDokUrl
+      });
+      showToast('✓ Perjalanan selesai, armada kembali tersedia', 'success');
+      setTimeout(()=>{ loadData(); if(afterSuccess) afterSuccess(); }, 700);
+    }catch(err){
+      console.error(err);
+      showToast('Gagal menyimpan/mengunggah foto. Cek koneksi.', 'error');
+      if(btn){ btn.disabled = false; btn.textContent = 'Konfirmasi Selesai'; }
+    }
+  }
+
+  function confirmStartTrip(ticket){
+    performStartTrip(ticket, {
+      km: 'km-awal-'+ticket, foto: 'foto-km-awal-'+ticket, btn: 'btn-confirm-start-'+ticket
+    }, ()=>{ driverActionOpenTicket = null; renderDriverTasks(); });
+  }
+
+  function confirmFinishTrip(ticket){
+    performFinishTrip(ticket, {
+      km: 'd-km-akhir-'+ticket, biaya: 'd-biaya-'+ticket,
+      fotoKm: 'd-foto-km-akhir-'+ticket, fotoBiaya: 'd-foto-biaya-'+ticket,
+      kebersihan: 'd-kebersihan-'+ticket, fotoDok: 'd-foto-dok-'+ticket,
+      btn: 'd-btn-finish-'+ticket
+    }, ()=>{ driverActionOpenTicket = null; renderDriverTasks(); });
+  }
+
+  function renderDriverRecentHistory(){
+    const el = document.getElementById('driver-recent-history');
+    if(!el) return;
+    const mine = driverAssignedRequests().filter(r => r['Status']==='Selesai').slice().reverse().slice(0,4);
+    if(mine.length===0){ el.innerHTML = '<div class="empty-body">Belum ada trip selesai.</div>'; return; }
+    el.innerHTML = mine.map(r=>{
+      return '<div class="riwayat-item"><div class="riwayat-top"><span class="nm">'+esc(r['Nama']||'')+'</span><span class="tk">'+esc(r['Ticket ID']||'')+'</span></div>'+
+        '<div class="riwayat-meta">'+esc(r['Lokasi Awal']||'')+' → '+esc(r['Tujuan']||'')+'<br>'+
+        esc(r['Tanggal']||'')+' · '+esc(r['KM Awal']||'-')+' → '+esc(r['KM Akhir']||'-')+' km · Rp '+esc(r['Total Biaya']||'0')+'</div>'+buktiFotoHtml(r)+'</div>';
+    }).join('');
+  }
+
+  function renderRiwayat(){
+    let reqs = scoped(STATE.requests || []);
+    if(isDriver()) reqs = reqs.filter(r => sameName(r['Driver'], authDriverName));
+    reqs = reqs.slice().reverse();
+    const el = document.getElementById('riwayat-list');
+    if(reqs.length===0){ el.innerHTML = '<div class="loading-row">Belum ada trip.</div>'; return; }
+    el.innerHTML = reqs.map(r=>{
+      const kmBiayaLine = r['Status']==='Selesai'
+        ? '<br>🛣️ '+esc(r['KM Awal']||'-')+' → '+esc(r['KM Akhir']||'-')+' km · 💵 Rp '+esc(r['Total Biaya']||'0')
+        : '';
+      const mapsHtml = mapsButtonHtml(r);
+      return '<div class="riwayat-item"><div class="riwayat-top"><span class="nm">'+(r['Site']?'<span class="site-tag">'+esc(r['Site'])+'</span>':'')+(isSelfDriveReq(r)?'<span class="site-tag" style="color:var(--blue);background:var(--blue-dim);">🚗 SELF-DRIVE</span>':'')+esc(r['Nama']||'')+'</span><span class="tk">'+esc(r['Ticket ID']||'')+'</span></div>'+
+        '<div class="riwayat-meta">'+esc(r['Lokasi Awal']||'')+' → '+esc(r['Tujuan']||'')+'<br>'+
+        esc(r['Tanggal']||'')+' · '+esc(r['Jam']||'')+' · CC: '+esc(r['Cost Center']||'-')+' · Status: <b style="color:'+STATUS_COLORS[r['Status']]+'">'+esc(r['Status']||'')+'</b>'+kmBiayaLine+'</div>'+
+        buktiFotoHtml(r)+
+        (mapsHtml ? '<div class="trip-actions" style="margin-top:9px;">'+mapsHtml+'</div>' : '')+
+      '</div>';
+    }).join('');
+  }
+
+  function renderFleet(){
+    const armada = scoped(STATE.armada || []);
+    const tersedia = armada.filter(a=>a['Status']==='Tersedia');
+    const dipakai = armada.filter(a=>a['Status']!=='Tersedia');
+    document.getElementById('fleet-tersedia').innerHTML = tersedia.length ?
+      groupBySite(tersedia).map(g=>'<div class="site-group-title">'+esc(g.site)+'</div>'+g.items.map(fleetRow).join('')).join('') :
+      '<div class="empty-body">Tidak ada armada tersedia.</div>';
+    document.getElementById('fleet-dipakai').innerHTML = dipakai.length ?
+      groupBySite(dipakai).map(g=>'<div class="site-group-title">'+esc(g.site)+'</div>'+g.items.map(fleetRow).join('')).join('') :
+      '<div class="empty-body">Tidak ada armada sedang dipakai.</div>';
+  }
+
+  function fleetRow(a){
+    const badgeClass = a['Status']==='Tersedia' ? 'tersedia' : 'dipakai';
+    return '<div class="armada-item"><div class="armada-info"><span class="armada-plate">'+esc(a['No Polisi']||a['Kode']||'')+'</span>'+
+      '<span class="armada-jenis">'+esc(a['Jenis']||'')+'</span></div><span class="badge '+badgeClass+'">'+esc((a['Status']||'').toUpperCase())+'</span></div>';
+  }
+
+  function renderArmadaDetail(){
+    const armada = scoped(STATE.armada || []);
+    const drivers = scoped(STATE.driver || []);
+    const reqs = STATE.requests || [];
+    const el = document.getElementById('armada-detail-list');
+    if(!el) return;
+    if(armada.length===0 && drivers.length===0){ el.innerHTML = '<div class="empty-body">Belum ada data armada/driver. Tambahkan di sheet "Armada" / "Driver".</div>'; return; }
+
+    const armadaRow = a=>{
+      const active = reqs.find(r => r['Armada Assigned']===a['Kode'] && (r['Status']==='Ditugaskan'||r['Status']==='Berjalan'));
+      return '<div class="armada-item"><div class="armada-info"><span class="armada-plate">'+esc(a['No Polisi']||a['Kode']||'')+'</span>'+
+        '<span class="armada-jenis">'+esc(a['Jenis']||'')+(active?' · Driver: '+esc(active['Driver']||'-'):'')+'</span></div>'+
+        '<span class="badge '+(a['Status']==='Tersedia'?'tersedia':'dipakai')+'">'+esc((a['Status']||'').toUpperCase())+'</span></div>';
+    };
+    const driverRow = d=>{
+      const valid = hasValidPhone(d['No HP']);
+      const hasLogin = DRIVER_ACCOUNTS.some(acc => sameName(acc.driverName, d['Nama Driver']));
+      return '<div class="armada-item"><div class="armada-info"><span class="armada-jenis">🧑‍✈️ '+esc(d['Nama Driver']||'')+(hasLogin?'':' <span style="color:var(--red);font-size:10.5px;">(belum ada akun login)</span>')+'</span></div>'+
+        (valid ? '<span class="badge tersedia">'+esc(d['No HP'])+'</span>' : '<span class="badge dipakai">MENYUSUL</span>')+'</div>';
+    };
+    const picRow = p=>{
+      const valid = hasValidPhone(p['No HP']);
+      return '<div class="armada-item"><div class="armada-info"><span class="armada-jenis">☎️ '+esc(p['Nama']||'')+'</span></div>'+
+        (valid ? '<span class="badge tersedia">'+esc(p['No HP'])+'</span>' : '<span class="badge dipakai">MENYUSUL</span>')+'</div>';
+    };
+
+    const pics = scoped(STATE.pic || []);
+    const sites = Array.from(new Set([].concat(armada.map(a=>a['Site']||'Lainnya'), drivers.map(d=>d['Site']||'Lainnya'), pics.map(p=>p['Site']||'Lainnya'))));
+    const order = SITE_LIST.filter(s=>sites.includes(s)).concat(sites.filter(s=>!SITE_LIST.includes(s)));
+
+    el.innerHTML = order.map(site=>{
+      const siteArmada = armada.filter(a=>(a['Site']||'Lainnya')===site);
+      const siteDrivers = drivers.filter(d=>(d['Site']||'Lainnya')===site);
+      const sitePics = pics.filter(p=>(p['Site']||'Lainnya')===site);
+      return '<div class="site-group-title">'+esc(site)+' — Armada</div>'+
+        (siteArmada.length? siteArmada.map(armadaRow).join('') : '<div class="empty-body">Belum ada armada.</div>')+
+        '<div class="site-group-title">'+esc(site)+' — Driver</div>'+
+        (siteDrivers.length? siteDrivers.map(driverRow).join('') : '<div class="empty-body">Belum ada driver.</div>')+
+        '<div class="site-group-title">'+esc(site)+' — PIC Transport</div>'+
+        (sitePics.length? sitePics.map(picRow).join('') : '<div class="empty-body">Belum ada PIC.</div>');
+    }).join('');
+  }
+
+  let lastCekStatusRequest = null;
+  let selfDriveFormOpen = false;
+
+  function cekStatus(){
+    const input = document.getElementById('status-ticket-input').value.trim().toUpperCase();
+    const box = document.getElementById('status-result');
+    if(!input){ box.innerHTML = ''; lastCekStatusRequest = null; return; }
+    const r = (STATE.requests||[]).find(req => String(req['Ticket ID']||'').toUpperCase() === input);
+    if(!r){
+      box.innerHTML = '<div class="panel"><div class="empty-body">Tiket tidak ditemukan. Cek kembali nomor tiketnya.</div></div>';
+      lastCekStatusRequest = null;
+      return;
+    }
+    lastCekStatusRequest = r;
+    selfDriveFormOpen = false;
+    renderCekStatusResult();
+  }
+
+  function toggleSelfDriveForm(){
+    selfDriveFormOpen = !selfDriveFormOpen;
+    renderCekStatusResult();
+  }
+
+  function renderCekStatusResult(){
+    const box = document.getElementById('status-result');
+    const r = lastCekStatusRequest;
+    if(!box || !r) return;
+    const status = r['Status'] || 'Menunggu';
+    const selfDrive = isSelfDriveReq(r);
+    const driverInfo = findDriverInfo(r['Driver'], r['Site']);
+    const driverPhoneBlock = driverInfo && hasValidPhone(driverInfo['No HP'])
+      ? ' <button class="copy-btn" onclick="copyText(\''+esc(driverInfo['No HP'])+'\', this)">📋 '+esc(driverInfo['No HP'])+'</button>'+
+        ' <a class="copy-btn" href="https://wa.me/'+normalizePhone(driverInfo['No HP'])+'" target="_blank" rel="noopener">💬 WA Driver</a>'
+      : (r['Driver'] ? ' <span style="color:var(--text-faint);">(No. HP belum ada di data)</span>' : '');
+    const kmBiayaBlock = status === 'Selesai'
+      ? '<div class="trip-row">🛣️ Total: '+esc(r['KM Awal']||'-')+' → '+esc(r['KM Akhir']||'-')+' km · 💵 Rp '+esc(r['Total Biaya']||'0')+'</div>'+buktiFotoHtml(r)
+      : (status === 'Berjalan' ? buktiFotoHtml(r) : '');
+    const mapsHtml = mapsButtonHtml(r);
+    const hasCoords = (r['Lat Awal'] && r['Lng Awal']) || (r['Lat Tujuan'] && r['Lng Tujuan']);
+
+    const driverRow = selfDrive
+      ? '<div class="trip-row">🚗 Tipe: <b style="color:var(--blue);">Self-Drive (Tanpa Driver)</b></div>'
+      : '<div class="trip-row" style="flex-wrap:wrap;">🧑‍✈️ Driver: <b style="color:var(--text)">'+esc(r['Driver']||'-')+'</b>'+driverPhoneBlock+'</div>';
+
+    // Untuk trip self-drive, requester sendiri yang update Mulai/Selesai lewat halaman ini.
+    let selfDriveActionHtml = '';
+    if(selfDrive && (status === 'Ditugaskan' || status === 'Berjalan')){
+      const ticket = r['Ticket ID'];
+      if(status === 'Ditugaskan'){
+        selfDriveActionHtml = '<div class="trip-actions" style="margin-top:11px;"><button class="btn-start" onclick="toggleSelfDriveForm()">🚦 Mulai Perjalanan (Self-Drive)</button></div>'+
+          (selfDriveFormOpen ? startTripFormHtml(ticket, 'sd-km-awal-', 'sd-foto-km-awal-', 'sd-btn-confirm-start-', 'confirmSelfDriveStart') : '');
+      } else {
+        selfDriveActionHtml = '<div class="trip-actions" style="margin-top:11px;"><button class="btn-finish" onclick="toggleSelfDriveForm()">🏁 Selesai Perjalanan (Self-Drive)</button></div>'+
+          (selfDriveFormOpen ? finishTripFormHtml(ticket, 'sd-', 'confirmSelfDriveFinish') : '');
+      }
+    }
+
+    box.innerHTML = '<div class="panel">'+
+      '<div class="riwayat-top" style="margin-bottom:10px;"><span class="nm">'+(r['Site']?'<span class="site-tag">'+esc(r['Site'])+'</span>':'')+esc(r['Nama']||'')+'</span>'+
+      '<span class="trip-badge" style="background:'+(STATUS_DIM[status]||'')+';color:'+(STATUS_COLORS[status]||'var(--text)')+';">'+status.toUpperCase()+'</span></div>'+
+      '<div class="trip-row">🎫 Tiket: <b style="color:var(--text)">'+esc(r['Ticket ID']||'')+'</b> <button class="copy-btn" onclick="copyText(\''+esc(r['Ticket ID']||'')+'\', this)">📋 Salin</button></div>'+
+      '<div class="trip-row">🏷️ Departemen: '+esc(r['Departemen']||'-')+' · CC: '+esc(r['Cost Center']||'-')+' · NIK: '+esc(r['NIK']||'-')+'</div>'+
+      '<div class="trip-row">📍 '+esc(r['Lokasi Awal']||'')+' → '+esc(r['Tujuan']||'')+'</div>'+
+      '<div class="trip-row">🕒 '+esc(r['Tanggal']||'')+' · berangkat '+esc(r['Jam']||'')+' · pulang '+esc(r['Jam Pulang']||'-')+'</div>'+
+      (r['Armada Assigned'] ?
+        '<div class="trip-row">🚐 Mobil: <b style="color:var(--text)">'+esc(getArmadaLabel(r['Armada Assigned']))+'</b></div>'+
+        driverRow+
+        kmBiayaBlock
+        : '<div class="trip-row">Belum ada armada yang ditugaskan.</div>')+
+      (hasCoords ? '<div id="cekstatus-mini-map" class="mini-map"></div>' : '')+
+      (mapsHtml ? '<div class="trip-actions" style="margin-top:11px;">'+mapsHtml+'</div>' : '')+
+      selfDriveActionHtml+
+    '</div>';
+    if(hasCoords) renderCekStatusMiniMap(r);
+  }
+
+  function confirmSelfDriveStart(ticket){
+    performStartTrip(ticket, {
+      km: 'sd-km-awal-'+ticket, foto: 'sd-foto-km-awal-'+ticket, btn: 'sd-btn-confirm-start-'+ticket
+    }, ()=>{ selfDriveFormOpen = false; });
+  }
+
+  function confirmSelfDriveFinish(ticket){
+    performFinishTrip(ticket, {
+      km: 'sd-km-akhir-'+ticket, biaya: 'sd-biaya-'+ticket,
+      fotoKm: 'sd-foto-km-akhir-'+ticket, fotoBiaya: 'sd-foto-biaya-'+ticket,
+      kebersihan: 'sd-kebersihan-'+ticket, fotoDok: 'sd-foto-dok-'+ticket,
+      btn: 'sd-btn-finish-'+ticket
+    }, ()=>{ selfDriveFormOpen = false; });
+  }
+
+  /** Cari nomor HP driver dari sheet Driver berdasarkan nama (dan site kalau ada) */
+  function findDriverInfo(namaDriver, site){
+    if(!namaDriver) return null;
+    const list = STATE.driver || [];
+    return list.find(d => sameName(d['Nama Driver'], namaDriver) && (!site || d['Site']===site))
+      || list.find(d => sameName(d['Nama Driver'], namaDriver))
+      || null;
+  }
+
+  /** Copy teks ke clipboard + kasih feedback toast (dengan fallback utk webview lama) */
+  function copyText(text, btn){
+    const done = ()=> showToast('✓ Disalin: ' + text, 'success');
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text, done));
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+  function fallbackCopy(text, cb){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+    if(cb) cb();
+  }
+
+  function normalizePhone(raw){
+    let digits = String(raw||'').replace(/\D/g,'');
+    if(digits.startsWith('0')) digits = '62' + digits.slice(1);
+    else if(digits.startsWith('8')) digits = '62' + digits;
+    return digits;
+  }
+
+  function notifyRequester(ticket, overrideRecord){
+    const r = overrideRecord || (STATE.requests||[]).find(req=>req['Ticket ID']===ticket);
+    if(!r || !r['Kontak']){ showToast('Nomor kontak requester tidak ditemukan', 'error'); return; }
+    const selfDrive = isSelfDriveReq(r);
+    let driverLine;
+    if(selfDrive){
+      driverLine = 'Tipe        : Self-Drive (Tanpa Driver) — silakan ambil & kembalikan unit sendiri.\n'+
+        'Update KM/Selesai bisa dilakukan lewat menu Cek Status pakai nomor tiket ini.';
+    } else {
+      const driverInfo = findDriverInfo(r['Driver'], r['Site']);
+      const driverPhone = driverInfo && hasValidPhone(driverInfo['No HP']) ? driverInfo['No HP'] : '';
+      driverLine = 'Driver      : '+(r['Driver']||'-') + (driverPhone ? '\nNo. HP Driver: '+driverPhone : '');
+    }
+    const statusLink = buildAppLink('status', ticket);
+    const msg = 'Halo '+r['Nama']+', request kendaraan Anda (tiket '+ticket+') sudah dijadwalkan.\n\n'+
+      'Mobil       : '+getArmadaLabel(r['Armada Assigned'])+'\n'+
+      driverLine+'\n'+
+      'Cost Center : '+(r['Cost Center']||'-')+'\n'+
+      'Jadwal      : '+r['Tanggal']+' jam '+r['Jam']+' (pulang '+(r['Jam Pulang']||'-')+')\n'+
+      'Jemput      : '+r['Lokasi Awal']+'\n\n'+
+      (selfDrive ? 'Terima kasih.' : 'Silakan koordinasi langsung dengan driver di atas. Terima kasih.')+
+      (statusLink ? '\n\nCek status & detail kapan saja, tinggal tap:\n'+statusLink : '');
+    const phone = normalizePhone(r['Kontak']);
+    window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
+  }
+
+  /** Kirim WA ke DRIVER begitu PIC assign dia ke sebuah trip, berisi detail
+   *  trip + link deep-link supaya driver bisa tap dan langsung masuk ke form
+   *  "Mulai Tugas" untuk tiket itu. Dilewati untuk trip self-drive (tidak
+   *  ada driver) atau kalau nomor HP driver belum ada di data. */
+  function notifyDriverAssigned(ticket, overrideRecord){
+    const r = overrideRecord || (STATE.requests||[]).find(req=>req['Ticket ID']===ticket);
+    if(!r || !r['Driver']) return;
+    const driverInfo = findDriverInfo(r['Driver'], r['Site']);
+    if(!driverInfo || !hasValidPhone(driverInfo['No HP'])){
+      showToast('Nomor HP driver belum ada di data — WA ke driver tidak bisa dikirim otomatis', 'error');
+      return;
+    }
+    const startLink = buildAppLink('start', ticket);
+    const msg = 'Halo '+r['Driver']+', ada tugas baru untukmu (tiket '+ticket+').\n\n'+
+      'Mobil       : '+getArmadaLabel(r['Armada Assigned'])+'\n'+
+      'Requester   : '+r['Nama']+' ('+(r['Kontak']||'-')+')\n'+
+      'Jadwal      : '+r['Tanggal']+' jam '+r['Jam']+' (pulang '+(r['Jam Pulang']||'-')+')\n'+
+      'Rute        : '+r['Lokasi Awal']+' → '+r['Tujuan']+'\n\n'+
+      (startLink ? 'Tap link ini untuk langsung submit "Mulai Tugas":\n'+startLink+'\n\n' : '')+
+      'Terima kasih.';
+    const phoneDriver = normalizePhone(driverInfo['No HP']);
+    window.open('https://wa.me/'+phoneDriver+'?text='+encodeURIComponent(msg), '_blank_driver');
+  }
+
+  /* ======================= INTERACTIONS ======================= */
+  function toggleGroup(status){
+    openGroups[status] = !openGroups[status];
+    renderDispatchBoard();
+  }
+  function toggleAssign(ticket){
+    assignOpenTicket = (assignOpenTicket === ticket) ? null : ticket;
+    renderDispatchBoard();
+  }
+  /** Normalisasi data armada dari sheet supaya tahan terhadap variasi nama kolom
+   *  (misal 'No Polisi', 'No. Polisi', 'NoPol', 'Plat', dsb) */
+  function normalizeArmadaList(list){
+    return (list||[]).map(a=>{
+      const keys = Object.keys(a);
+      const clean = s => String(s).toLowerCase().replace(/[^a-z]/g,'');
+      const findVal = (patterns) => {
+        const k = keys.find(key => patterns.includes(clean(key)));
+        return k ? a[k] : '';
+      };
+      return {
+        'Site': findVal(['site','lokasi','cabang']) || '',
+        'Kode': findVal(['kode','code']) || '',
+        'Jenis': findVal(['jenis','type','model']) || '',
+        'No Polisi': findVal(['nopolisi','nopol','noplat','platnomor','plat','platnomorkendaraan']) || '',
+        'Status': findVal(['status']) || ''
+      };
+    });
+  }
+
+  /** Normalisasi data driver: Site | Nama Driver */
+  function normalizeDriverList(list){
+    return (list||[]).map(d=>{
+      const keys = Object.keys(d);
+      const clean = s => String(s).toLowerCase().replace(/[^a-z]/g,'');
+      const findVal = (patterns) => {
+        const k = keys.find(key => patterns.includes(clean(key)));
+        return k ? d[k] : '';
+      };
+      return {
+        'Site': findVal(['site','lokasi','cabang']) || '',
+        'Nama Driver': findVal(['namadriver','driver','nama']) || '',
+        'No HP': findVal(['nohp','nomorhp','hp','notelp','notelepon','phone','wa','whatsapp']) || ''
+      };
+    }).filter(d => d['Nama Driver'] && d['Nama Driver'].toUpperCase() !== 'MENYUSUL');
+  }
+
+  /** Normalisasi data PIC: Site | Nama | No HP */
+  function normalizePicList(list){
+    return (list||[]).map(p=>{
+      const keys = Object.keys(p);
+      const clean = s => String(s).toLowerCase().replace(/[^a-z]/g,'');
+      const findVal = (patterns) => {
+        const k = keys.find(key => patterns.includes(clean(key)));
+        return k ? p[k] : '';
+      };
+      return {
+        'Site': findVal(['site','lokasi','cabang']) || '',
+        'Nama': findVal(['nama','name','pic']) || '',
+        'No HP': findVal(['nohp','nomorhp','hp','notelp','notelepon','phone','wa','whatsapp']) || ''
+      };
+    }).filter(p => p['Nama']);
+  }
+
+  /** true kalau No HP valid untuk dibuatkan link WhatsApp (bukan kosong / "MENYUSUL") */
+  function hasValidPhone(raw){
+    const digits = String(raw||'').replace(/\D/g,'');
+    return digits.length >= 8;
+  }
+
+  function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  /** Cari data lengkap armada dari kode-nya, kembalikan label "Nopol (Kode) — Jenis" */
+  function getArmadaLabel(kode){
+    if(!kode) return '-';
+    const a = (STATE.armada||[]).find(x => x['Kode'] === kode);
+    if(!a) return kode;
+    const nopol = a['No Polisi'] || a['No. Polisi'] || a['Plat'] || '';
+    const jenis = a['Jenis'] || '';
+    return (nopol ? nopol+' ('+kode+')' : kode) + (jenis ? ' — '+jenis : '');
+  }
+
+  async function confirmAssign(ticket){
+    const req = (STATE.requests||[]).find(r=>r['Ticket ID']===ticket);
+    const selfDrive = req ? isSelfDriveReq(req) : false;
+    const armadaKode = document.getElementById('assign-armada-'+ticket).value;
+    let driver = '';
+
+    if(selfDrive){
+      if(!armadaKode){ showToast('Pilih armada', 'error'); return; }
+    } else {
+      const driverInput = document.getElementById('assign-driver-'+ticket);
+      driver = driverInput ? driverInput.value.trim() : '';
+      if(!armadaKode || !driver){ showToast('Pilih armada & isi nama driver', 'error'); return; }
+      const driverHasLogin = DRIVER_ACCOUNTS.some(acc => sameName(acc.driverName, driver));
+      if(!driverHasLogin){
+        showToast('⚠️ Nama driver tidak cocok dengan akun login manapun — driver tidak akan bisa lihat tugas ini', 'error');
+      }
+    }
+
+    const ok = await postAction({
+      action: 'update_status', ticket_id: ticket, status: 'Ditugaskan',
+      armada: armadaKode, driver: driver,
+      armada_kode_untuk_update: armadaKode, armada_status_baru: 'Dipakai'
+    }, selfDrive ? 'Armada di-assign (self-drive, tanpa driver)' : 'Trip di-assign ke ' + armadaKode);
+    assignOpenTicket = null;
+    // Notifikasi otomatis ke requester (armada, driver kalau ada, cost center)
+    // & ke driver (link langsung ke form Mulai Tugas). Pakai data yang baru
+    // saja kita kirim (armadaKode/driver) supaya tidak menunggu STATE
+    // ter-refresh dulu dari server (yang baru terjadi ~900ms kemudian).
+    if(ok){
+      const patched = req ? Object.assign({}, req, {
+        'Armada Assigned': armadaKode, 'Driver': driver, 'Status': 'Ditugaskan'
+      }) : null;
+      notifyRequester(ticket, patched);
+      if(!selfDrive) notifyDriverAssigned(ticket, patched);
+    }
+  }
+
+  async function postAction(payload, successMsg){
+    try{
+      await runServer('updateRequestStatus', payload);
+      showToast('✓ ' + successMsg, 'success');
+      setTimeout(loadData, 900);
+      return true;
+    }catch(err){
+      console.error(err);
+      showToast('Gagal update. Cek koneksi.', 'error');
+      return false;
+    }
+  }
+
+  /* ======================= FORM ======================= */
+  function setupToggleGroup(id){
+    document.getElementById(id).querySelectorAll('.toggle-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        btn.parentElement.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  }
+  setupToggleGroup('f-tipe-group');
+  setupToggleGroup('f-driver-group');
+  document.getElementById('f-driver-group').addEventListener('click', function(e){
+    const btn = e.target.closest('.toggle-btn');
+    if(!btn) return;
+    const isSelf = (btn.dataset.value === 'Tidak');
+    document.getElementById('self-drive-note').style.display = isSelf ? 'block' : 'none';
+    document.getElementById('sim-field').style.display = isSelf ? 'block' : 'none';
+    if(!isSelf) clearSimPhoto();
+  });
+  /** Reset input Foto SIM + preview (dipanggil saat pilih "Ya, dengan Driver" atau reset form). */
+  let simUpload = null; // { file, token, promise, url, state: 'uploading'|'done'|'error' }
+  function setSimStatus(txt, color){
+    const el = document.getElementById('sim-status');
+    if(!el) return;
+    el.textContent = txt || '';
+    el.style.color = color || 'var(--text-faint)';
+    el.style.display = txt ? 'block' : 'none';
+  }
+  function clearSimPhoto(){
+    simUpload = null;
+    setSimStatus('');
+    const inp = document.getElementById('f-foto-sim');
+    if(inp) inp.value = '';
+    const prev = document.getElementById('sim-preview');
+    if(prev){ prev.style.display = 'none'; prev.removeAttribute('src'); }
+    const fld = document.getElementById('sim-field');
+    if(fld) fld.classList.remove('invalid');
+  }
+  document.getElementById('f-foto-sim').addEventListener('change', function(){
+    const prev = document.getElementById('sim-preview');
+    const f = this.files && this.files[0];
+    if(f && f.type && f.type.startsWith('image/')){
+      prev.src = URL.createObjectURL(f);
+      prev.style.display = 'block';
+      document.getElementById('sim-field').classList.remove('invalid');
+      startSimUpload(f);
+    } else {
+      prev.style.display = 'none';
+      simUpload = null;
+      setSimStatus('');
+    }
+  });
+  /** Mulai unggah foto SIM di latar belakang begitu foto diambil, jadi saat
+   *  "Kirim Request" ditekan fotonya biasanya sudah selesai terunggah. */
+  function startSimUpload(file){
+    const state = { file: file, token: Date.now() + Math.random(), url: '', state: 'uploading', promise: null };
+    simUpload = state;
+    setSimStatus('Mengunggah foto SIM…', 'var(--text-faint)');
+    state.promise = uploadTripFileFor('SIM', file, 'sim', true).then(function(url){
+      if(!url) throw new Error('empty url');
+      state.url = url; state.state = 'done';
+      if(simUpload === state) setSimStatus('✓ Foto SIM siap', 'var(--green)');
+      return url;
+    }).catch(function(err){
+      console.error(err);
+      state.state = 'error';
+      if(simUpload === state) setSimStatus('Unggah foto SIM gagal — akan dicoba lagi saat kirim', 'var(--red)');
+      return '';
+    });
+  }
+
+  /** Ambil URL foto SIM: pakai hasil unggah latar belakang, ulang sekali kalau gagal. */
+  async function getSimUrl(file){
+    if(simUpload && simUpload.file === file){
+      const url = await simUpload.promise;
+      if(url) return url;
+    }
+    return await uploadTripFileFor('SIM', file, 'sim', true);
+  }
+
+  function getToggleValue(id){ const a = document.querySelector('#'+id+' .toggle-btn.active'); return a ? a.dataset.value : ''; }
+  function stepQty(delta){
+    const input = document.getElementById('f-jumlah');
+    let val = parseInt(input.value,10) || 1;
+    val = Math.max(1, Math.min(40, val+delta));
+    input.value = val;
+  }
+
+  async function submitRequest(){
+    const ids = ['f-site','f-nama','f-nik','f-departemen','f-cost-center','f-kontak','f-tanggal','f-jam','f-jam-pulang','f-lokasi','f-tujuan','f-keperluan'];
+    let valid = true;
+    ids.forEach(id=>{
+      const el = document.getElementById(id);
+      const bad = !el.value.trim();
+      el.closest('.field').classList.toggle('invalid', bad);
+      if(bad) valid = false;
+    });
+    const tipe = getToggleValue('f-tipe-group');
+    if(!tipe) valid = false;
+    const butuhDriver = getToggleValue('f-driver-group');
+    if(!butuhDriver) valid = false;
+    const simInput = document.getElementById('f-foto-sim');
+    const simFile = (butuhDriver === 'Tidak' && simInput && simInput.files) ? simInput.files[0] : null;
+    if(butuhDriver === 'Tidak' && !simFile){
+      document.getElementById('sim-field').classList.add('invalid');
+      showToast('Ambil foto SIM dengan kamera untuk request self-drive', 'error');
+      return;
+    }
+    if(!valid){ showToast('Lengkapi field yang wajib diisi', 'error'); return; }
+
+    const ticketId = 'TRX-' + Date.now().toString().slice(-6);
+    const siteVal = document.getElementById('f-site').value;
+    const namaVal = document.getElementById('f-nama').value.trim();
+    const nikVal = document.getElementById('f-nik').value.trim();
+    const departemenVal = document.getElementById('f-departemen').value.trim();
+    const costCenterVal = document.getElementById('f-cost-center').value.trim();
+    const tanggalVal = document.getElementById('f-tanggal').value;
+    const jamVal = document.getElementById('f-jam').value;
+    const jamPulangVal = document.getElementById('f-jam-pulang').value;
+    const lokasiVal = document.getElementById('f-lokasi').value.trim();
+    const tujuanVal = document.getElementById('f-tujuan').value.trim();
+    const keperluanVal = document.getElementById('f-keperluan').value.trim();
+
+    const payload = {
+      action: 'new_request', ticket_id: ticketId,
+      site: siteVal,
+      nama: namaVal,
+      nik: nikVal,
+      departemen: departemenVal,
+      cost_center: costCenterVal,
+      kontak: document.getElementById('f-kontak').value.trim(),
+      tanggal_pakai: tanggalVal,
+      jam_pakai: jamVal,
+      jam_pulang: jamPulangVal,
+      tipe_perjalanan: tipe,
+      lokasi_awal: lokasiVal,
+      tujuan: tujuanVal,
+      keperluan: keperluanVal,
+      jenis_kendaraan: 'Mobil Operasional',
+      jumlah_penumpang: document.getElementById('f-jumlah').value,
+      catatan: document.getElementById('f-catatan').value.trim(),
+      lat_awal: formGps.awal ? formGps.awal.lat : '',
+      lng_awal: formGps.awal ? formGps.awal.lng : '',
+      lat_tujuan: formGps.tujuan ? formGps.tujuan.lat : '',
+      lng_tujuan: formGps.tujuan ? formGps.tujuan.lng : '',
+      butuh_driver: butuhDriver,
+      foto_sim_url: ''
+    };
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Mengirim…';
+    try{
+      if(simFile){
+        if(!(simUpload && simUpload.file === simFile && simUpload.state === 'done')){
+          btn.innerHTML = '<span class="spinner"></span> Menyelesaikan foto SIM…';
+        }
+        payload.foto_sim_url = await getSimUrl(simFile);
+        if(!payload.foto_sim_url) throw new Error('Upload foto SIM gagal');
+        btn.innerHTML = '<span class="spinner"></span> Mengirim…';
+      }
+      await runServer('submitNewRequest', payload);
+      showSuccessPanel(ticketId, { site: siteVal, nama: namaVal, departemen: departemenVal, tanggal: tanggalVal, jam: jamVal, jamPulang: jamPulangVal, lokasi: lokasiVal, tujuan: tujuanVal, keperluan: keperluanVal });
+      resetForm();
+      loadData();
+    }catch(err){
+      console.error(err);
+      showToast('Gagal mengirim. Cek koneksi.', 'error');
+    }finally{
+      btn.disabled = false;
+      btn.innerHTML = 'Kirim Request';
+    }
+  }
+
+  let pendingWaNotif = null; // { waMessageBase, allPics, ticketId } dipakai tombol WA per-PIC
+
+  function showSuccessPanel(ticketId, info){
+    document.getElementById('success-ticket').textContent = ticketId;
+    document.getElementById('success-ticket-copy').onclick = function(){ copyText(ticketId, this); };
+    const waMessageBase = 'Halo {name}, ada request kendaraan operasional baru (site ' + info.site + ').\n\n' +
+      'Tiket: ' + ticketId + '\n' +
+      'Pemohon: ' + info.nama + ' (' + info.departemen + ')\n' +
+      'Tanggal: ' + info.tanggal + ' jam ' + info.jam + ' (pulang ' + info.jamPulang + ')\n' +
+      'Rute: ' + info.lokasi + ' -> ' + info.tujuan + '\n' +
+      'Keperluan: ' + info.keperluan + '\n\n' +
+      'Mohon dijadwalkan ya. Terima kasih.';
+
+    // Tampilkan SEMUA PIC di site request ini (yang nomornya belum ada tampil
+    // nonaktif "MENYUSUL"), user bebas memilih PIC mana yang dikirimi WA.
+    const allPics = (STATE.pic||[]).filter(p => p['Site'] === info.site && String(p['Nama']||'').trim().toUpperCase() !== 'MENYUSUL');
+    const validCount = allPics.filter(p => hasValidPhone(p['No HP'])).length;
+
+    const box = document.getElementById('success-wa-buttons');
+    if(allPics.length === 0){
+      pendingWaNotif = null;
+      box.innerHTML = '<div class="empty-body">Belum ada data PIC untuk site '+esc(info.site)+'. Hubungi admin transport secara manual.</div>';
+    } else {
+      pendingWaNotif = { waMessageBase, allPics, ticketId };
+      box.innerHTML =
+        '<p class="panel-title" style="margin:0;">Kirim WA ke PIC '+esc(info.site)+'</p>'+
+        allPics.map((pic, idx)=>{
+          const ok = hasValidPhone(pic['No HP']);
+          return '<div style="display:flex;align-items:center;gap:10px;">'+
+            '<div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:700;">☎️ '+esc(pic['Nama'])+'</div>'+
+              '<div style="font-size:11px;color:var(--text-faint);">'+(ok ? esc(pic['No HP']) : 'No. HP belum tersedia')+'</div></div>'+
+            (ok
+              ? '<button type="button" id="wa-pic-btn-'+idx+'" class="btn-wa" style="padding:9px 13px;font-size:12.5px;flex-shrink:0;" onclick="sendWaToPic('+idx+')">💬 Kirim WA</button>'
+              : '<span class="badge dipakai">MENYUSUL</span>')+
+          '</div>';
+        }).join('')+
+        (validCount > 1 ? '<button type="button" class="copy-btn" style="justify-content:center;padding:10px;font-size:12px;" onclick="sendWaToAllPic()">Kirim ke semua PIC ('+validCount+' orang)</button>' : '')+
+        '<p style="font-size:11px;color:var(--text-faint);text-align:center;margin:2px 0 0;">Pilih PIC yang mau dikirimi. Email notifikasi sudah otomatis terkirim ke PIC.</p>';
+    }
+
+    goTo('success');
+  }
+
+  /** Bangun URL wa.me ke satu PIC (pesan + deep-link ke layar assign tiket ini). */
+  function buildPicWaUrl(pic){
+    const { waMessageBase, ticketId } = pendingWaNotif;
+    const assignLink = buildAppLink('assign', ticketId);
+    let msg = waMessageBase.replace('{name}', pic['Nama']);
+    if(assignLink) msg += '\n\nTap link ini untuk langsung buka & jadwalkan armada+driver:\n'+assignLink;
+    return 'https://wa.me/' + normalizePhone(pic['No HP']) + '?text=' + encodeURIComponent(msg);
+  }
+
+  /** Kirim WA ke SATU PIC pilihan user. */
+  function sendWaToPic(idx){
+    if(!pendingWaNotif) return;
+    const pic = pendingWaNotif.allPics[idx];
+    if(!pic || !hasValidPhone(pic['No HP'])) return;
+    window.open(buildPicWaUrl(pic), '_blank');
+    const btn = document.getElementById('wa-pic-btn-'+idx);
+    if(btn) btn.innerHTML = '✓ Terkirim';
+  }
+
+  /** Opsional: buka WA ke semua PIC (yang punya nomor) sekaligus. */
+  function sendWaToAllPic(){
+    if(!pendingWaNotif) return;
+    pendingWaNotif.allPics.forEach((pic, idx)=>{
+      if(!hasValidPhone(pic['No HP'])) return;
+      window.open(buildPicWaUrl(pic), '_blank_pic_' + idx);
+      const btn = document.getElementById('wa-pic-btn-'+idx);
+      if(btn) btn.innerHTML = '✓ Terkirim';
+    });
+  }
+
+  function finishSuccess(){
+    goTo('dashboard');
+  }
+
+  function resetForm(){
+    ['f-nama','f-nik','f-departemen','f-cost-center','f-kontak','f-tanggal','f-jam','f-jam-pulang','f-lokasi','f-tujuan','f-keperluan','f-catatan'].forEach(id=>document.getElementById(id).value='');
+    applySiteFieldLock();
+    document.getElementById('f-jumlah').value = '1';
+    document.querySelectorAll('.toggle-btn.active').forEach(b=>b.classList.remove('active'));
+    document.getElementById('self-drive-note').style.display = 'none';
+    document.getElementById('sim-field').style.display = 'none';
+    clearSimPhoto();
+    document.querySelectorAll('.field.invalid').forEach(f=>f.classList.remove('invalid'));
+    formGps = { awal: null, tujuan: null };
+    updateGpsHint('awal');
+    updateGpsHint('tujuan');
+  }
+
+  function showToast(msg, type){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show ' + (type||'');
+    setTimeout(()=>{ t.className = t.className.replace('show',''); }, 3000);
+  }
+
+  /* ======================= INIT ======================= */
+  populateSiteDropdown(SITE_LIST);
+  populateDriverLoginOptions();
+  renderNav();
+  goTo(isLoggedIn ? (selectedSite ? 'dashboard' : 'siteselect') : 'login');
+  if(isLoggedIn) loadData();
+  setInterval(loadData, 8000);
+
+  // Browser mobile sering "membekukan" timer setInterval saat tab di-background.
+  // Begitu tab/app aktif lagi, langsung tarik data terbaru tanpa perlu refresh manual.
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'visible'){
+      loadData();
+    }
+  });
+  window.addEventListener('focus', function(){
+    loadData();
+  });
+</script>
+</body>
+</html>

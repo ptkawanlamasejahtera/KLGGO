@@ -148,6 +148,8 @@ const PIC_SEED = [
  * sesuai kebutuhan, atau kosongkan array ini kalau tidak mau kirim email. */
 const FALLBACK_PIC_EMAILS = ['jemi.nuryanti@kawanlamacorp.com', 'khomisunur.iriani@kawanlamacorp.com'];
 
+const SCHEMA_FLAG = 'klg_schema_ok_v3';
+
 function getSheet(name) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(name);
@@ -251,16 +253,22 @@ function sheetToObjects(sheet) {
 /** Dipanggil saat app dibuka / refresh — balikin semua data sekaligus. */
 function getAppData() {
   const reqSheet = getSheet(REQUESTS_SHEET);
-  ensureHeaders(reqSheet, REQ_HEADERS);
-
   const armadaSheet = getSheet(ARMADA_SHEET);
-  seedIfEmpty(armadaSheet, ARMADA_HEADERS, ARMADA_SEED);
-
   const driverSheet = getSheet(DRIVER_SHEET);
-  seedIfEmpty(driverSheet, DRIVER_HEADERS, DRIVER_SEED);
-
   const picSheet = getSheet(PIC_SHEET);
-  seedIfEmpty(picSheet, PIC_HEADERS, PIC_SEED);
+
+  // Cek/perbaiki header + seed data awal HANYA sekali per 6 jam (bukan di setiap
+  // refresh), supaya pengambilan data jauh lebih cepat. Kalau kamu mengubah
+  // *_HEADERS di atas, naikkan angka versi pada SCHEMA_FLAG supaya pengecekan
+  // dijalankan ulang di deploy berikutnya.
+  const cache = CacheService.getScriptCache();
+  if (!cache.get(SCHEMA_FLAG)) {
+    ensureHeaders(reqSheet, REQ_HEADERS);
+    seedIfEmpty(armadaSheet, ARMADA_HEADERS, ARMADA_SEED);
+    seedIfEmpty(driverSheet, DRIVER_HEADERS, DRIVER_SEED);
+    seedIfEmpty(picSheet, PIC_HEADERS, PIC_SEED);
+    cache.put(SCHEMA_FLAG, '1', 21600);
+  }
 
   return {
     status: 'ok',
